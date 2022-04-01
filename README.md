@@ -28,3 +28,15 @@ Execute the following step once, to setup the server:
    on the Bunq account to the corresponding Ynab account
 7. To run the server, use [Supervisor](http://supervisord.org/). Install it using 
    `sudo apt install supervisor`
+8. Restart supervisor via `sudo systemctl restart supervisor`
+9. Add an item for the server to the supervisor config. this config file is located 
+   at `etc/supervisor/supervisord.conf`. Add the following lines:
+   ```
+       [program:BunqYnabConnect]
+       autostart=true
+       autorestart=true
+       directory={REPO_DIR}
+       logfile={REPO_DIR}/log.log
+       user={YOUR_USER}
+       command=poetry run python app.py
+   ```

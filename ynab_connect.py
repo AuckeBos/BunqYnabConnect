@@ -118,7 +118,6 @@ class Ynab:
         try:
             for group in api.get_categories(budget_id).data.category_groups:
                 for category in group.categories:
-                    print(category.name)
                     result.append(category)
             return result
         except Exception as e:
