@@ -135,6 +135,7 @@ class Ynab:
             return budgets.data.budgets
         except Exception as e:
             print(f"Exception when getting budgets: {e}")
+            raise e
 
     @cache(ttl=86400)
     def _get_accounts(self) -> []:
@@ -149,7 +150,7 @@ class Ynab:
                 for account in api.get_accounts(b.id).data.accounts:
                     account.budget_id = b.id
                     accounts.append(account)
-                accounts.extend(api.get_accounts(b))
             except ApiException as e:
                 print(f"Exception when getting accounts: {e}")
+                raise e
         return accounts
