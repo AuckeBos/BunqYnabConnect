@@ -14,7 +14,7 @@ def cache(ttl: int = None):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            key = args[1:] + tuple(sorted(kwargs.items()))
+            key = str(args[1:]) + str(tuple(sorted(kwargs.items())))[1:-1]
             c = shelve.open(f"./cache/{func.__name__}_{key}")
             is_expired = 'expires_at' in c and c['expires_at'] is not None and \
                          c['expires_at'] < time()
