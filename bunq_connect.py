@@ -2,9 +2,11 @@ import json
 import os.path
 import warnings
 
+from bunq import Pagination
 from bunq.sdk.context.api_context import ApiContext
 from bunq.sdk.context.bunq_context import BunqContext
 from bunq.sdk.http.api_client import ApiClient
+from bunq.sdk.model.generated import endpoint
 
 from helpers import log, get_config
 from setup import BUNQ_CONFIG_FILE
@@ -121,3 +123,13 @@ class Bunq:
             "notification_target": url
         })
         self._put_callbacks(callbacks)
+
+    def get_payments(self):
+        pagination = Pagination()
+        pagination.count = 1
+
+        result =endpoint .Payment.list(params=pagination.url_params_count_only)
+
+        params = result.pagination.url_params_previous_page
+        next_page = endpoint.Payment.list(params=params)
+        test = ''
