@@ -5,6 +5,7 @@ from ynab import Account, Category
 from ynab.rest import ApiException
 
 from cache import cache
+from exceptions import YnabAccountNotFoundException
 from helpers import get_config
 
 
@@ -45,7 +46,7 @@ class Ynab:
         :param memo: Memo of the transaction
         :return: success
         """
-        account = self._iban_to_account(iban)
+        account = self.iban_to_account(iban)
         budget_id = account.budget_id
         category = self._decide_category(budget_id, payee)
         date = datetime.now()
@@ -64,7 +65,7 @@ class Ynab:
                                           ynab.SaveTransactionWrapper(transaction))
         return True
 
-    def _iban_to_account(self, iban: str) -> Account:
+    def iban_to_account(self, iban: str) -> Account:
         """
         Convert an iban to an account id, by reading the 'Notes' on every account. The
         account is the one with the notes
@@ -76,7 +77,7 @@ class Ynab:
         for account in accounts:
             if account.note == iban:
                 return account
-        raise Exception(f"No account found for iban {iban}")
+        raise YnabAccountNotFoundException(f"No account found for iban {iban}")
 
     def _decide_category(self, budget_id, payee: str) -> Category:
         """
