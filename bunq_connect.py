@@ -11,10 +11,11 @@ from bunq.sdk.model.core.bunq_model import BunqModel
 from bunq.sdk.model.generated import endpoint
 from bunq.sdk.model.generated.endpoint import Payment, MonetaryAccount
 
+
 from cache import cache
-from helpers import log, get_config
+from helpers import log, get_config, get_ynab_connector
 from setup import BUNQ_CONFIG_FILE
-from ynab_connect import Ynab
+
 
 warnings.filterwarnings('ignore')
 
@@ -24,13 +25,7 @@ class Bunq:
     Class responsible for any Bunq connection functionality
     """
 
-    ynab: Ynab
-
     def __init__(self):
-        """
-        Create Ynab connector, load self
-        """
-        self.ynab = Ynab()
         self._load()
         self._check_callback()
 
@@ -49,7 +44,7 @@ class Bunq:
                 memo = f'Note: currency is {currency}'
             iban = data['alias']['iban']
             payee = data['counterparty_alias']['display_name']
-            self.ynab.add_transaction(iban, payee, amount, memo)
+            get_ynab_connector().add_transaction(iban, payee, amount, memo)
             log("Transaction added!")
         except Exception as e:
             log(f"Transaction not added: {e}", True)
@@ -139,37 +134,35 @@ class Bunq:
                 return alias.value
         raise ValueError(f"Cannot find iban of bunq model {model}")
 
-    def get_accounts(self) -> List[BunqModel]:
+    @cache(ttl=60 * 60 * 24)
+    def get_accounts(self) -> List:
         """
         Get a list of all bunq accounts
         """
-        return [a.get_referenced_object() for a in endpoint.MonetaryAccount.list().value]
+        from bunq_account import BunqAccount
+        return [BunqAccount(a) for a in endpoint.MonetaryAccount.list().value]
 
     # Cache for a week
     @cache(ttl=604800)
-    def get_payments(self) -> List[Tuple[BunqModel, List[Payment]]]:
+    def get_payments(self, account_id: int) -> List[Payment]:
         """
-        Get a list of tuples:
-        BankAccount, Payments
+        Get the payments of a BunqAccount
         """
         # Max allowed count is 200
+        payments = []
         page_count = 200
-        result = []
-        for account in self.get_accounts():
-            pagination = Pagination()
-            pagination.count = page_count
-            # For first query, only param is the count param
-            params = pagination.url_params_count_only
-            payments = []
-            should_continue = True
+        pagination = Pagination()
+        pagination.count = page_count
+        # For first query, only param is the count param
+        params = pagination.url_params_count_only
+        should_continue = True
 
-            while should_continue:
-                query_result = endpoint.Payment.list(monetary_account_id=account.id_,
-                                                     params=params)
-                payments.extend(query_result.value)
-                should_continue = query_result.pagination.has_previous_page()
-                if should_continue:
-                    # Use previous_page since ordering is new to old
-                    params = query_result.pagination.url_params_previous_page
-            result.append((account, payments))
-        return result
+        while should_continue:
+            query_result = endpoint.Payment.list(monetary_account_id=account_id,
+                                                 params=params)
+            payments.extend(query_result.value)
+            should_continue = query_result.pagination.has_previous_page()
+            if should_continue:
+                # Use previous_page since ordering is new to old
+                params = query_result.pagination.url_params_previous_page
+        return payments

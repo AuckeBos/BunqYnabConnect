@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 import ynab
 from ynab import Account, Category
@@ -6,7 +7,8 @@ from ynab.rest import ApiException
 
 from cache import cache
 from exceptions import YnabAccountNotFoundException
-from helpers import get_config
+from helpers import *
+from ynab_account import YnabAccount
 
 
 class Ynab:
@@ -65,7 +67,7 @@ class Ynab:
                                           ynab.SaveTransactionWrapper(transaction))
         return True
 
-    def iban_to_account(self, iban: str) -> Account:
+    def iban_to_account(self, iban: str) -> YnabAccount:
         """
         Convert an iban to an account id, by reading the 'Notes' on every account. The
         account is the one with the notes
@@ -73,9 +75,9 @@ class Ynab:
         :param iban:
         :return: The account id
         """
-        accounts = self._get_accounts()
+        accounts = self.get_ynab_accounts()
         for account in accounts:
-            if account.note == iban:
+            if account.account_info.note == iban:
                 return account
         raise YnabAccountNotFoundException(f"No account found for iban {iban}")
 
@@ -139,7 +141,7 @@ class Ynab:
             raise e
 
     @cache(ttl=86400)
-    def _get_accounts(self) -> []:
+    def get_ynab_accounts(self) -> List[YnabAccount]:
         """
         Get an array of all the accounts. Add property 'budget_id' to each account
         :return:  The accounts
@@ -150,8 +152,22 @@ class Ynab:
             try:
                 for account in api.get_accounts(b.id).data.accounts:
                     account.budget_id = b.id
-                    accounts.append(account)
+                    accounts.append(YnabAccount(account).set_budget_id(b.id))
             except ApiException as e:
                 print(f"Exception when getting accounts: {e}")
                 raise e
         return accounts
+
+    @cache(ttl=60 * 60 * 24)
+    def _get_categories(self, account: Account) -> List[Category]:
+        """
+        Get an array of all the categories of an account
+        :return:  The categories
+        """
+        api = ynab.CategoriesApi(self.client)
+        categories = []
+        for categories in api.get_categories(budget_id = account.budget_id):
+            return None
+            account.budget_id = b.id
+            accounts.append(account)
+        return categories
