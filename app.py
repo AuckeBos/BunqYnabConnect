@@ -3,7 +3,7 @@ import json
 from flask import Flask, request
 
 from bunq_connect import Bunq
-from helpers import get_config, get_bunq_connector
+from helpers import get_config
 from ynab_connect import Ynab
 
 app = Flask(__name__)
@@ -16,7 +16,8 @@ def receive_transaction():
     MUTATION by Bunq
     """
     transaction = json.loads(request.data.decode())
-    get_bunq_connector().add_transaction(transaction)
+    bunq = Bunq()
+    bunq.add_transaction(transaction)
     return "OK", 200
 
 

@@ -11,8 +11,9 @@ from bunq.sdk.model.generated import endpoint
 from bunq.sdk.model.generated.endpoint import Payment
 
 from cache import cache
-from helpers import log, get_config, get_ynab_connector, retry
+from helpers import log, get_config, retry
 from setup import BUNQ_CONFIG_FILE
+from ynab_connect import Ynab
 
 warnings.filterwarnings('ignore')
 
@@ -22,7 +23,13 @@ class Bunq:
     Class responsible for any Bunq connection functionality
     """
 
+    ynab: Ynab
+
     def __init__(self):
+        """
+        Create Ynab connector, load self
+        """
+        self.ynab = Ynab()
         self._load()
         self._check_callback()
 
@@ -36,12 +43,12 @@ class Bunq:
         data = transaction['NotificationUrl']['object']['Payment']
         amount = float(data['amount']['value'])
         currency = data['amount']['currency']
-        memo = data['description']
+        memo = ''
         if currency != get_config("currency"):
-            memo += f' - Note: currency is {currency}'
+            memo = f'Note: currency is {currency}'
         iban = data['alias']['iban']
         payee = data['counterparty_alias']['display_name']
-        get_ynab_connector().add_transaction(iban, payee, amount, memo)
+        self.ynab.add_transaction(iban, payee, amount, memo)
         log("Transaction added!")
 
     def _load(self):
@@ -129,35 +136,37 @@ class Bunq:
                 return alias.value
         raise ValueError(f"Cannot find iban of bunq model {model}")
 
-    @cache(ttl=60 * 60 * 24)
-    def get_accounts(self) -> List:
+    def get_accounts(self) -> List[BunqModel]:
         """
         Get a list of all bunq accounts
         """
-        from bunq_account import BunqAccount
-        return [BunqAccount(a) for a in endpoint.MonetaryAccount.list().value]
+        return [a.get_referenced_object() for a in endpoint.MonetaryAccount.list().value]
 
     # Cache for a week
     @cache(ttl=604800)
-    def get_payments(self, account_id: int) -> List[Payment]:
+    def get_payments(self) -> List[Tuple[BunqModel, List[Payment]]]:
         """
-        Get the payments of a BunqAccount
+        Get a list of tuples:
+        BankAccount, Payments
         """
         # Max allowed count is 200
-        payments = []
         page_count = 200
-        pagination = Pagination()
-        pagination.count = page_count
-        # For first query, only param is the count param
-        params = pagination.url_params_count_only
-        should_continue = True
+        result = []
+        for account in self.get_accounts():
+            pagination = Pagination()
+            pagination.count = page_count
+            # For first query, only param is the count param
+            params = pagination.url_params_count_only
+            payments = []
+            should_continue = True
 
-        while should_continue:
-            query_result = endpoint.Payment.list(monetary_account_id=account_id,
-                                                 params=params)
-            payments.extend(query_result.value)
-            should_continue = query_result.pagination.has_previous_page()
-            if should_continue:
-                # Use previous_page since ordering is new to old
-                params = query_result.pagination.url_params_previous_page
-        return payments
+            while should_continue:
+                query_result = endpoint.Payment.list(monetary_account_id=account.id_,
+                                                     params=params)
+                payments.extend(query_result.value)
+                should_continue = query_result.pagination.has_previous_page()
+                if should_continue:
+                    # Use previous_page since ordering is new to old
+                    params = query_result.pagination.url_params_previous_page
+            result.append((account, payments))
+        return result
