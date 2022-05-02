@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 from functools import wraps
+from time import sleep
 
 from setup import CONFIG_DIR, CONFIG_FILE
 
@@ -84,6 +85,7 @@ def retry(max_attempts: int, message: str = None):
                     if count >= max_attempts:
                         break
                     log("Call failed, retrying...")
+                    sleep(5)
             log(f"{message} - {e}", True)
             raise e
 

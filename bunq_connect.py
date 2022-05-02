@@ -26,7 +26,7 @@ class Bunq:
         self._load()
         self._check_callback()
 
-    @retry(3, message="Transaction not added")
+    @retry(2, message="Transaction not added")
     def add_transaction(self, transaction: dict):
         """
         Add a transaction to Ynab. Should be called by Flask, whenever Bunq calls
