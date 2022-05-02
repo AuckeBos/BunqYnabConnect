@@ -68,7 +68,7 @@ def retry(max_attempts: int, message: str = None):
                     if count >= max_attempts:
                         exception = e
                         break
-                    log("Call failed, retrying...")
+                    log(f"Call failed, retrying... - {e}")
                     sleep(5)
             log(f"{message} - {exception}", True)
             raise e
