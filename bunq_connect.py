@@ -12,7 +12,7 @@ from bunq.sdk.model.generated import endpoint
 from bunq.sdk.model.generated.endpoint import Payment, MonetaryAccount
 
 from cache import cache
-from helpers import log, get_config
+from helpers import log, get_config, retry
 from setup import BUNQ_CONFIG_FILE
 from ynab_connect import Ynab
 
@@ -34,25 +34,23 @@ class Bunq:
         self._load()
         self._check_callback()
 
+    @retry(1, message="Transaction not added")
     def add_transaction(self, transaction: dict):
         """
         Add a transaction to Ynab. Should be called by Flask, whenever Bunq calls
         webhook.
         """
-        try:
-            log(f"Adding transaction {transaction}")
-            data = transaction['NotificationUrl']['object']['Payment']
-            amount = float(data['amount']['value'])
-            currency = data['amount']['currency']
-            memo = ''
-            if currency != get_config("currency"):
-                memo = f'Note: currency is {currency}'
-            iban = data['alias']['iban']
-            payee = data['counterparty_alias']['display_name']
-            self.ynab.add_transaction(iban, payee, amount, memo)
-            log("Transaction added!")
-        except Exception as e:
-            log(f"Transaction not added: {e}", True)
+        log(f"Adding transaction {transaction}")
+        data = transaction['NotificationUrl']['object']['Payment']
+        amount = float(data['amount']['value'])
+        currency = data['amount']['currency']
+        memo = ''
+        if currency != get_config("currency"):
+            memo = f'Note: currency is {currency}'
+        iban = data['alias']['iban']
+        payee = data['counterparty_alias']['display_name']
+        self.ynab.add_transaction(iban, payee, amount, memo)
+        log("Transaction added!")
 
     def _load(self):
         """

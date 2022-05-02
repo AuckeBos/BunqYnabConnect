@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+from functools import wraps
 
 from setup import CONFIG_DIR, CONFIG_FILE
 
@@ -39,3 +40,35 @@ def get_config(key=None):
         if key is not None:
             return cfg[key]
         return cfg
+
+
+def retry(max_attempts: int, message: str = None):
+    """
+    Retry decorator. If an exception occurs, retry. For at most max_attemts times
+    :param max_attempts: The max nr of attempts
+    :param message The error message to log
+    args
+    """
+
+    message = message or ""
+    message += f" - Call failed {max_attempts} times"
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            count = 0
+            # Try until max attempts
+            while count < max_attempts:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    count += 1
+                    if count >= max_attempts:
+                        break
+                    log("Call failed, retrying...")
+            log(message, True)
+            raise e
+
+        return wrapper
+
+    return decorator
