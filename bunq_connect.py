@@ -1,6 +1,6 @@
 import json
 import warnings
-from typing import List
+from typing import List, Tuple
 
 from bunq import Pagination
 from bunq.sdk.context.api_context import ApiContext
