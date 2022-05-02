@@ -1,7 +1,6 @@
 import json
-import os.path
 import warnings
-from typing import List, Tuple
+from typing import List
 
 from bunq import Pagination
 from bunq.sdk.context.api_context import ApiContext
@@ -9,13 +8,11 @@ from bunq.sdk.context.bunq_context import BunqContext
 from bunq.sdk.http.api_client import ApiClient
 from bunq.sdk.model.core.bunq_model import BunqModel
 from bunq.sdk.model.generated import endpoint
-from bunq.sdk.model.generated.endpoint import Payment, MonetaryAccount
-
+from bunq.sdk.model.generated.endpoint import Payment
 
 from cache import cache
 from helpers import log, get_config, get_ynab_connector, retry
 from setup import BUNQ_CONFIG_FILE
-
 
 warnings.filterwarnings('ignore')
 
@@ -29,7 +26,7 @@ class Bunq:
         self._load()
         self._check_callback()
 
-    @retry(1, message="Transaction not added")
+    @retry(3, message="Transaction not added")
     def add_transaction(self, transaction: dict):
         """
         Add a transaction to Ynab. Should be called by Flask, whenever Bunq calls
@@ -44,7 +41,7 @@ class Bunq:
             memo += f' - Note: currency is {currency}'
         iban = data['alias']['iban']
         payee = data['counterparty_alias']['display_name']
-        self.ynab.add_transaction(iban, payee, amount, memo)
+        get_ynab_connector().add_transaction(iban, payee, amount, memo)
         log("Transaction added!")
 
     def _load(self):
