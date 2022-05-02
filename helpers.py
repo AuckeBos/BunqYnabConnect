@@ -58,6 +58,7 @@ def retry(max_attempts: int, message: str = None):
         @wraps(func)
         def wrapper(*args, **kwargs):
             count = 0
+            exception = None
             # Try until max attempts
             while count < max_attempts:
                 try:
@@ -65,10 +66,11 @@ def retry(max_attempts: int, message: str = None):
                 except Exception as e:
                     count += 1
                     if count >= max_attempts:
+                        exception = e
                         break
                     log("Call failed, retrying...")
                     sleep(5)
-            log(f"{message} - {e}", True)
+            log(f"{message} - {exception}", True)
             raise e
 
         return wrapper
