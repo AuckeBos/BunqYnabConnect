@@ -71,7 +71,7 @@ def retry(max_attempts: int, message: str = None):
                     log(f"Call failed, retrying... - {e}")
                     sleep(5)
             log(f"{message} - {exception}", True)
-            raise e
+            raise exception
 
         return wrapper
 
