@@ -43,9 +43,9 @@ class Bunq:
         data = transaction['NotificationUrl']['object']['Payment']
         amount = float(data['amount']['value'])
         currency = data['amount']['currency']
-        memo = ''
+        memo = data['description']
         if currency != get_config("currency"):
-            memo = f'Note: currency is {currency}'
+            memo += f' - Note: currency is {currency}'
         iban = data['alias']['iban']
         payee = data['counterparty_alias']['display_name']
         self.ynab.add_transaction(iban, payee, amount, memo)
