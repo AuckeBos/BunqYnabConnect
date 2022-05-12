@@ -3,30 +3,28 @@ from typing import List, Tuple
 from bunq.sdk.model.generated.endpoint import MonetaryAccountBank, Payment
 from ynab import Account
 
+from bunq_account import BunqAccount
 from bunq_connect import Bunq
+from cache import cache
 from exceptions import YnabAccountNotFoundException
+from helpers import get_bunq_connector, get_ynab_connector
+from ynab_account import YnabAccount
 from ynab_connect import Ynab
 
-bunq_connector = Bunq()
-ynab_connector = Ynab()
 
-def get_account_info() -> List[Tuple[MonetaryAccountBank, Account, List[Payment]]]:
+# @cache(60 * 60 * 24)
+def get_account_info() -> List[Tuple[BunqAccount, YnabAccount]]:
     """
-    Get a list, one item for each ynab account:
-    - Bunq account
-    - Ynab account
-    - List of bunq payments
+    Get a list of tuples, each item:
+    - A BunqAccount (with payments)
+    - A YnabAccount (with payments)
     """
-    result = []
-    bunq_data = bunq_connector.get_payments()
-    for (bunq_account, payments) in bunq_data:
-        iban = bunq_connector.iban_of_bunqmodel(bunq_account)
-        try:
-            ynab_account = ynab_connector.iban_to_account(iban)
-            result.append((bunq_account, ynab_account, payments))
-        except YnabAccountNotFoundException:
-            continue
-    return result
+    ynab_accounts = [account.load_categories().load_payments() for account in
+                     get_ynab_connector().get_ynab_accounts()]
+    bunq_accounts = [account.load_payments() for account in
+                     get_bunq_connector().get_ynab_accounts()]
+    test = ''
 
 
-get_account_info()
+info = get_account_info()
+test = ''

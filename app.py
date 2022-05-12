@@ -3,7 +3,7 @@ import json
 from flask import Flask, request
 
 from bunq_connect import Bunq
-from helpers import get_config
+from helpers import get_config, get_bunq_connector
 from ynab_connect import Ynab
 
 app = Flask(__name__)
@@ -11,13 +11,13 @@ app = Flask(__name__)
 
 @app.route("/receive-transaction", methods=['GET', 'POST'])
 def receive_transaction():
+    print('ak')
     """
     Receive a transaction. Must be added as callback for any transaction of type
     MUTATION by Bunq
     """
     transaction = json.loads(request.data.decode())
-    bunq = Bunq()
-    bunq.add_transaction(transaction)
+    get_bunq_connector().add_transaction(transaction)
     return "OK", 200
 
 
