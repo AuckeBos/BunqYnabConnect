@@ -1,10 +1,10 @@
 import json
+import threading
 
 from flask import Flask, request
 
 from bunq_connect import Bunq
 from helpers import get_config
-from ynab_connect import Ynab
 
 app = Flask(__name__)
 
@@ -14,11 +14,24 @@ def receive_transaction():
     """
     Receive a transaction. Must be added as callback for any transaction of type
     MUTATION by Bunq
+
+    # A:
+    Run in thread, such that we return 200 immediately. Otherwise return takes to
+    long, hence Bunq doesnt receive it, hence it will re-run the callback 5 times,
+    resulting in multiple ynab transactions
     """
     transaction = json.loads(request.data.decode())
+    # A
+    threading.Thread(target=process_transaction, args=(transaction,)).start()
+    return "OK", 200
+
+
+def process_transaction(transaction):
+    """
+    Process a transaction, by claled add_transaction on bunq
+    """
     bunq = Bunq()
     bunq.add_transaction(transaction)
-    return "OK", 200
 
 
 if __name__ == '__main__':
