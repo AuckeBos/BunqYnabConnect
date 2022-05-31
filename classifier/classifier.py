@@ -12,10 +12,12 @@ def get_account_info() -> List[Tuple[BunqAccount, YnabAccount]]:
     - A BunqAccount (with payments)
     - A YnabAccount (with payments)
     """
+    budgets = [b.load_info() for b in get_ynab_connector().get_budgets()]
+
     ynab_accounts = [account.load_categories().load_payments() for account in
-                     get_ynab_connector().get_ynab_accounts()]
+                     get_ynab_connector().get_accounts()]
     bunq_accounts = [account.load_payments() for account in
-                     get_bunq_connector().get_ynab_accounts()]
+                     get_bunq_connector().get_accounts()]
     test = ''
 
 

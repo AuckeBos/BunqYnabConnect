@@ -17,9 +17,12 @@ class BunqAccount:
         self.account_info = acc.get_referenced_object()
 
     def load_payments(self) -> "BunqAccount":
-        id = self.account_info.id_
-        self.payments = get_bunq_connector().get_payments(id)
+        self.payments = get_bunq_connector().get_payments(self.id)
         return self
+
+    @property
+    def id(self):
+        return self.account_info.id_
 
     @property
     def iban(self) -> str:

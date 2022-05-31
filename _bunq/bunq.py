@@ -44,6 +44,38 @@ class Bunq:
         get_ynab_connector().add_transaction(iban, payee, amount, memo)
         log("Transaction added!")
 
+    @cache(ttl=60 * 60 * 24)
+    def get_accounts(self) -> List[BunqAccount]:
+        """
+        Get a list of all bunq accounts
+        """
+        return [BunqAccount(a) for a in endpoint.MonetaryAccount.list().value]
+
+    # Cache for a week
+    @cache(ttl=604800)
+    def get_payments(self, account_id: int) -> List[Payment]:
+        """
+        Get the payments of a BunqAccount
+        """
+        # Max allowed count is 200
+        payments = []
+        page_count = 200
+        pagination = Pagination()
+        pagination.count = page_count
+        # For first query, only param is the count param
+        params = pagination.url_params_count_only
+        should_continue = True
+
+        while should_continue:
+            query_result = endpoint.Payment.list(monetary_account_id=account_id,
+                                                 params=params)
+            payments.extend(query_result.value)
+            should_continue = query_result.pagination.has_previous_page()
+            if should_continue:
+                # Use previous_page since ordering is new to old
+                params = query_result.pagination.url_params_previous_page
+        return payments
+
     def _load(self):
         """
         Initialize context, ran on init
@@ -117,35 +149,3 @@ class Bunq:
             "notification_target": url
         })
         self._put_callbacks(callbacks)
-
-    @cache(ttl=60 * 60 * 24)
-    def get_accounts(self) -> List[BunqAccount]:
-        """
-        Get a list of all _bunq accounts
-        """
-        return [BunqAccount(a) for a in endpoint.MonetaryAccount.list().value]
-
-    # Cache for a week
-    @cache(ttl=604800)
-    def get_payments(self, account_id: int) -> List[Payment]:
-        """
-        Get the payments of a BunqAccount
-        """
-        # Max allowed count is 200
-        payments = []
-        page_count = 200
-        pagination = Pagination()
-        pagination.count = page_count
-        # For first query, only param is the count param
-        params = pagination.url_params_count_only
-        should_continue = True
-
-        while should_continue:
-            query_result = endpoint.Payment.list(monetary_account_id=account_id,
-                                                 params=params)
-            payments.extend(query_result.value)
-            should_continue = query_result.pagination.has_previous_page()
-            if should_continue:
-                # Use previous_page since ordering is new to old
-                params = query_result.pagination.url_params_previous_page
-        return payments

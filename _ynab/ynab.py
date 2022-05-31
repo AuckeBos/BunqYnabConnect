@@ -67,21 +67,35 @@ class Ynab:
         :param iban:
         :return: The account id
         """
-        accounts = self.get_ynab_accounts()
+        accounts = self.get_accounts()
         for account in accounts:
             if account.iban == iban:
                 return account
         raise YnabAccountNotFoundException(f"No account found for iban {iban}")
 
     @cache(ttl=86400)
-    def get_ynab_accounts(self) -> List[YnabAccount]:
+    def get_budgets(self) -> List[Budget]:
+        """
+        Get an array of all the budgets
+        :return: The budgets
+        """
+        api = ynab.BudgetsApi(self.client)
+        try:
+            budgets = api.get_budgets()
+            return [Budget(budget_info) for budget_info in budgets.data.budgets]
+        except Exception as e:
+            print(f"Exception when getting budgets: {e}")
+            raise e
+
+    @cache(ttl=86400)
+    def get_accounts(self) -> List[YnabAccount]:
         """
         Get an array of all the accounts. Add property 'budget_id' to each account
         :return:  The accounts
         """
         api = ynab.AccountsApi(self.client)
         accounts = []
-        for b in self._get_budgets():
+        for b in self.get_budgets():
             try:
                 for account in api.get_accounts(b.id).data.accounts:
                     accounts.append(YnabAccount(account).set_budget_id(b.id))
@@ -92,7 +106,7 @@ class Ynab:
 
     # Cache for 24 hours
     @cache(ttl=86400)
-    def _get_categories(self, budget_id: str) -> []:
+    def get_categories(self, budget_id: str) -> []:
         """
         Get an array of all the categories of a budget
         :param budget_id: the budget
@@ -108,20 +122,6 @@ class Ynab:
         except Exception as e:
             print(f"Exception when getting categories: {e}")
 
-    @cache(ttl=86400)
-    def _get_budgets(self) -> List[Budget]:
-        """
-        Get an array of all the budgets
-        :return: The budgets
-        """
-        api = ynab.BudgetsApi(self.client)
-        try:
-            budgets = api.get_budgets()
-            return [Budget(budget_info) for budget_info in budgets.data.budgets]
-        except Exception as e:
-            print(f"Exception when getting budgets: {e}")
-            raise e
-
     def _decide_category(self, budget_id, payee: str) -> Category:
         """
         Decide the category of a payment to a certain payee.
@@ -132,7 +132,7 @@ class Ynab:
         :return: the category id
         """
         name = 'Inflow: Ready to Assign'
-        for category in self._get_categories(budget_id):
+        for category in self.get_categories(budget_id):
             if category.name == name:
                 return category
         raise Exception(f'No category found for budget {budget_id} and payee {payee}')
