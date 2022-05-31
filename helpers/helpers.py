@@ -46,7 +46,7 @@ def get_config(key=None):
 
 
 def get_bunq_connector():
-    from bunq_connect import Bunq
+    from _bunq.bunq import Bunq
     global _bunq_connector
     if _bunq_connector is None:
         _bunq_connector = Bunq()
@@ -54,7 +54,7 @@ def get_bunq_connector():
 
 
 def get_ynab_connector():
-    from ynab_connect import Ynab
+    from _ynab.ynab import Ynab
     global _ynab_connector
     if _ynab_connector is None:
         _ynab_connector = Ynab()

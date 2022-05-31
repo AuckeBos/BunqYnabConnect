@@ -5,15 +5,16 @@ import ynab
 from ynab import Account, Category, TransactionDetail
 from ynab.rest import ApiException
 
-from cache import cache
-from exceptions import YnabAccountNotFoundException
-from helpers import *
-from ynab_account import YnabAccount
+from _ynab.ynab_account import YnabAccount
+from helpers.cache import cache
+from helpers.exceptions import YnabAccountNotFoundException
+from helpers.helpers import *
+from _ynab.budget import Budget
 
 
 class Ynab:
     """
-    Class responsible for any Ynab connections
+    Class responsible for any _ynab connections
 
     TODO:
         1. Recognise a transfer from 1 account to another, and create it as such
@@ -30,7 +31,7 @@ class Ynab:
 
     def add_transaction(self, iban: str, payee: str, value: float, memo: str) -> bool:
         """
-        Add a transaction. Called by the Bunq connector.
+        Add a transaction. Called by the _bunq connector.
         :param iban: The iban on which the transaction was made. Will be translated to
         account_id. If this translation fails,
         throw exception
@@ -89,6 +90,38 @@ class Ynab:
                 raise e
         return accounts
 
+    # Cache for 24 hours
+    @cache(ttl=86400)
+    def _get_categories(self, budget_id: str) -> []:
+        """
+        Get an array of all the categories of a budget
+        :param budget_id: the budget
+        :return: The categories
+        """
+        api = ynab.CategoriesApi(self.client)
+        result = []
+        try:
+            for group in api.get_categories(budget_id).data.category_groups:
+                for category in group.categories:
+                    result.append(category)
+            return result
+        except Exception as e:
+            print(f"Exception when getting categories: {e}")
+
+    @cache(ttl=86400)
+    def _get_budgets(self) -> List[Budget]:
+        """
+        Get an array of all the budgets
+        :return: The budgets
+        """
+        api = ynab.BudgetsApi(self.client)
+        try:
+            budgets = api.get_budgets()
+            return [Budget(budget_info) for budget_info in budgets.data.budgets]
+        except Exception as e:
+            print(f"Exception when getting budgets: {e}")
+            raise e
+
     def _decide_category(self, budget_id, payee: str) -> Category:
         """
         Decide the category of a payment to a certain payee.
@@ -116,41 +149,9 @@ class Ynab:
         client = ynab.ApiClient(configuration)
         return client
 
-    # Cache for 24 hours
-    @cache(ttl=86400)
-    def _get_categories(self, budget_id: str) -> []:
-        """
-        Get an array of all the categories of a budget
-        :param budget_id: the budget
-        :return: The categories
-        """
-        api = ynab.CategoriesApi(self.client)
-        result = []
-        try:
-            for group in api.get_categories(budget_id).data.category_groups:
-                for category in group.categories:
-                    result.append(category)
-            return result
-        except Exception as e:
-            print(f"Exception when getting categories: {e}")
-
-    @cache(ttl=86400)
-    def _get_budgets(self) -> []:
-        """
-        Get an array of all the budgets
-        :return: The budgets
-        """
-        api = ynab.BudgetsApi(self.client)
-        try:
-            budgets = api.get_budgets()
-            return budgets.data.budgets
-        except Exception as e:
-            print(f"Exception when getting budgets: {e}")
-            raise e
-
     def _monkey_patch_ynab(self):
         """
-        Some ynab classes have bugs. Override the functions with those bugs here,
+        Some _ynab classes have bugs. Override the functions with those bugs here,
         to prevent exceptions
         """
 

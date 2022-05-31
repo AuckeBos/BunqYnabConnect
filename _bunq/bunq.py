@@ -1,18 +1,17 @@
 import json
 import warnings
-from typing import List, Tuple
+from typing import List
 
 from bunq import Pagination
 from bunq.sdk.context.api_context import ApiContext
 from bunq.sdk.context.bunq_context import BunqContext
 from bunq.sdk.http.api_client import ApiClient
-from bunq.sdk.model.core.bunq_model import BunqModel
 from bunq.sdk.model.generated import endpoint
 from bunq.sdk.model.generated.endpoint import Payment
 
-from bunq_account import BunqAccount
-from cache import cache
-from helpers import log, get_config, get_ynab_connector, retry
+from _bunq.bunq_account import BunqAccount
+from helpers.cache import cache
+from helpers.helpers import log, get_config, get_ynab_connector, retry
 from setup import BUNQ_CONFIG_FILE
 
 warnings.filterwarnings('ignore')
@@ -20,7 +19,7 @@ warnings.filterwarnings('ignore')
 
 class Bunq:
     """
-    Class responsible for any Bunq connection functionality
+    Class responsible for any _bunq connection functionality
     """
 
     def __init__(self):
@@ -30,7 +29,7 @@ class Bunq:
     @retry(2, message="Transaction not added")
     def add_transaction(self, transaction: dict):
         """
-        Add a transaction to Ynab. Should be called by Flask, whenever Bunq calls
+        Add a transaction to _ynab. Should be called by Flask, whenever _bunq calls
         webhook.
         """
         log(f"Adding transaction {transaction}")
@@ -122,7 +121,7 @@ class Bunq:
     @cache(ttl=60 * 60 * 24)
     def get_accounts(self) -> List[BunqAccount]:
         """
-        Get a list of all bunq accounts
+        Get a list of all _bunq accounts
         """
         return [BunqAccount(a) for a in endpoint.MonetaryAccount.list().value]
 

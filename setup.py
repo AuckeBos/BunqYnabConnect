@@ -5,7 +5,7 @@ import requests
 from bunq import ApiEnvironmentType
 from bunq.sdk.context.api_context import ApiContext
 
-CONFIG_DIR = './config'
+CONFIG_DIR = 'config'
 CONFIG_FILE = f"{CONFIG_DIR}/cfg.json"
 BUNQ_CONFIG_FILE = f"{CONFIG_DIR}/bunq.cfg"
 
@@ -15,7 +15,7 @@ def setup():
         print("Config folder yet exists. To re-run the setup, delete your config dir")
         exit()
     print("Running one-time setup")
-    print("Before continuing, make sure you have \na) your Bunq api key \nb) your Ynab "
+    print("Before continuing, make sure you have \na) your _bunq api key \nb) your _ynab "
           "api token\nc) The paths of the private key and chainfile of your ssl key")
     input("Press enter to key to continue...")
     _setup_config()
@@ -26,14 +26,14 @@ def _setup_config():
     """
     Retrieve user input for the .cfg file
     """
-    print("To enable the Bunq webhook, a Flask REST api is hosted.")
+    print("To enable the _bunq webhook, a Flask REST api is hosted.")
     cfg = {
         "host": input("On which host should the server listen? [0.0.0.0]: ") or
                 "0.0.0.0",
         "port": input(
             "On which port should the server listen? Note that this port should "
             "be forwarded in your private network. [9888]: ") or 9888,
-        "hostname": input("On which url is the host found (Bunq connects to this "
+        "hostname": input("On which url is the host found (_bunq connects to this "
                           "url)?: "),
         "ynab_token": input("What is your YNAB api token?: "),
         "ssl_context": (
@@ -50,17 +50,17 @@ def _setup_config():
 
 def _setup_bunq() -> None:
     """
-    Ask for bunq connection token, create cfg file
+    Ask for _bunq connection token, create cfg file
     """
     env = ApiEnvironmentType.PRODUCTION
-    key = input("What is your Bunq api key?: ")
+    key = input("What is your _bunq api key?: ")
     description = 'BunqYnabConnect'
     ips = [get_public_ip()]
     try:
         context = ApiContext.create(env, key, description, ips)
         context.save(BUNQ_CONFIG_FILE)
     except Exception as e:
-        print(f"Could not create Bunq config: {e}", True)
+        print(f"Could not create _bunq config: {e}", True)
         exit()
 
 

@@ -1,10 +1,9 @@
 from typing import List
 
-from bunq.sdk.model.core.bunq_model import BunqModel
-from bunq.sdk.model.generated.endpoint import MonetaryAccount, Payment
+from bunq.sdk.model.generated.endpoint import Payment
 from ynab import Account, Category
 
-from helpers import get_bunq_connector, get_ynab_connector
+from helpers.helpers import get_ynab_connector
 
 
 class YnabAccount:
@@ -32,9 +31,9 @@ class YnabAccount:
     @property
     def iban(self) -> str:
         """
-        A Ynab account normally doesn't have an Iban. This project works based on the
-        assumption that the user saves the Iban of the bunq account that is linked to
-        the ynab account, in its notes
+        A _ynab account normally doesn't have an Iban. This project works based on the
+        assumption that the user saves the Iban of the _bunq account that is linked to
+        the _ynab account, in its notes
         """
         return self.account_info.note
 

@@ -3,8 +3,8 @@ import threading
 
 from flask import Flask, request
 
-from helpers import get_bunq_connector
-from helpers import get_config
+from helpers.helpers import get_bunq_connector
+from helpers.helpers import get_config
 
 app = Flask(__name__)
 
@@ -13,12 +13,12 @@ app = Flask(__name__)
 def receive_transaction():
     """
     Receive a transaction. Must be added as callback for any transaction of type
-    MUTATION by Bunq
+    MUTATION by _bunq
 
     # A:
     Run in thread, such that we return 200 immediately. Otherwise return takes to
-    long, hence Bunq doesnt receive it, hence it will re-run the callback 5 times,
-    resulting in multiple ynab transactions
+    long, hence _bunq doesnt receive it, hence it will re-run the callback 5 times,
+    resulting in multiple _ynab transactions
     """
     transaction = json.loads(request.data.decode())
     threading.Thread(target=process_transaction, args=(transaction,)).start()
@@ -27,7 +27,7 @@ def receive_transaction():
 
 def process_transaction(transaction):
     """
-    Process a transaction, by claled add_transaction on bunq
+    Process a transaction, by claled add_transaction on _bunq
     """
     get_bunq_connector().add_transaction(transaction)
 

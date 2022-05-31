@@ -16,8 +16,8 @@ Execute the following step once, to setup the server:
    a look at the [Documentation](https://api.youneedabudget.com/).
 4. Create an Api key for Bunq. This key is used once to register this app to your Bunq
    account. Bunq will respond with a configuration file, which is then used for login
-   purposes. This token is needed in the setup script. Take a look at
-   the [Documentation](https://doc.bunq. com/#/authentication).
+   purposes. This token is needed in the setup script. Take a look at the 
+   [Documentation](https://doc.bunq.com/#/authentication) .
 5. The other steps include providing login credentials for Bunq and Ynab.
    (setup.py)[setup.py] guides you through this process. Run `poetry run python setup.py`
    . This will run the one-time configuration steps, it asks for user input during the

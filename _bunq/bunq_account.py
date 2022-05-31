@@ -3,7 +3,7 @@ from typing import List
 from bunq.sdk.model.core.bunq_model import BunqModel
 from bunq.sdk.model.generated.endpoint import MonetaryAccount, Payment
 
-from helpers import get_bunq_connector
+from helpers.helpers import get_bunq_connector
 
 
 class BunqAccount:
