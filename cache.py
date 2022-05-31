@@ -23,9 +23,9 @@ def cache(ttl: int = None):
                 value = func(*args, **kwargs)
                 c['value'] = value
                 c['expires_at'] = expires_at
-                c.close()
             else:
                 value = c['value']
+            c.close()
             return value
 
         return wrapper

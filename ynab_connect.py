@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 
 import ynab
-from ynab import Account, Category
+from ynab import Account, Category, TransactionDetail
 from ynab.rest import ApiException
 
 from cache import cache
@@ -17,7 +17,6 @@ class Ynab:
 
     TODO:
         1. Recognise a transfer from 1 account to another, and create it as such
-        2. Monkey path TransactionDetail
         3. Decide category based on payee name / iban
     """
     client = None
@@ -26,20 +25,31 @@ class Ynab:
         """
         Create client
         """
+        self.monkey_patch_ynab()
         self.client = self._get_client()
+
+    def monkey_patch_ynab(self):
+        """
+        Some ynab classes have bugs. Override the functions with those bugs here,
+        to prevent exceptions
+        """
+
+        def type(self, type):
+            self._type = type
+
+        def transfer_account_id(self, transfer_account_id):
+            self._transfer_account_id = transfer_account_id
+
+        def import_id(self, import_id):
+            self._import_id = import_id
+
+        TransactionDetail.transfer_account_id = transfer_account_id
+        TransactionDetail.import_id = import_id
+        Account.type = type
 
     def add_transaction(self, iban: str, payee: str, value: float, memo: str) -> bool:
         """
         Add a transaction. Called by the Bunq connector.
-
-        === IMPORTANT ===
-        todo: Monkey patch TransactionDetail class
-         The class TransactionDetail of the Ynab sk is broken. If an exception occurs,
-         manually comment out the two
-         lines in __init__ of TransactionDetail where the properties
-         transfer_account_id and import_id are set.
-
-
         :param iban: The iban on which the transaction was made. Will be translated to
         account_id. If this translation fails,
         throw exception
