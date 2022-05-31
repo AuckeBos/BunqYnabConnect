@@ -19,7 +19,7 @@ class Budget:
 
     def _load_accounts(self):
         self.accounts = []
-        for account in get_ynab_connector().get_accounts():
+        for account in get_ynab_connector().get_ynab_accounts():
             if account.budget_id == self.id:
                 self.accounts.append(account)
 

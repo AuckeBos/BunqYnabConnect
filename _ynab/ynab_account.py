@@ -1,14 +1,13 @@
 from typing import List
 
-from bunq.sdk.model.generated.endpoint import Payment
-from ynab import Account, Category
+from ynab import Account, Category, TransactionDetail
 
 from helpers.helpers import get_ynab_connector
 
 
 class YnabAccount:
     account_info: Account
-    payments: List[Payment]
+    transactions: List[TransactionDetail]
     categories: List[Category]
     budget_id: int
 
@@ -19,13 +18,8 @@ class YnabAccount:
         self.budget_id = id
         return self
 
-
-    def load_payments(self) -> "YnabAccount":
-        self.payments = get_ynab_connector().get_payments(self.account_info.id)
-        return self
-
-    def load_categories(self) -> "YnabAccount":
-        self.categories = get_ynab_connector().get_categories(self.account_info.id)
+    def load_transactions(self) -> "YnabAccount":
+        self.transactions = get_ynab_connector().get_transactions(self)
         return self
 
     @property

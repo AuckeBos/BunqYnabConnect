@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 
 import ynab
-from ynab import Account, Category, TransactionDetail
+from ynab import Account, Category, TransactionDetail, SubTransaction
 from ynab.rest import ApiException
 
 from _ynab.ynab_account import YnabAccount
@@ -67,7 +67,7 @@ class Ynab:
         :param iban:
         :return: The account id
         """
-        accounts = self.get_accounts()
+        accounts = self.get_ynab_accounts()
         for account in accounts:
             if account.iban == iban:
                 return account
@@ -88,7 +88,7 @@ class Ynab:
             raise e
 
     @cache(ttl=86400)
-    def get_accounts(self) -> List[YnabAccount]:
+    def get_ynab_accounts(self) -> List[YnabAccount]:
         """
         Get an array of all the accounts. Add property 'budget_id' to each account
         :return:  The accounts
@@ -122,6 +122,14 @@ class Ynab:
         except Exception as e:
             print(f"Exception when getting categories: {e}")
 
+    def get_transactions(self, account: YnabAccount) -> List[TransactionDetail]:
+        """
+        Get an array of all the transactions of an account
+        """
+        api = ynab.TransactionsApi(self.client)
+        return api.get_transactions_by_account(account.budget_id,
+                                               account.id).data.transactions
+
     def _decide_category(self, budget_id, payee: str) -> Category:
         """
         Decide the category of a payment to a certain payee.
@@ -151,19 +159,40 @@ class Ynab:
 
     def _monkey_patch_ynab(self):
         """
-        Some _ynab classes have bugs. Override the functions with those bugs here,
-        to prevent exceptions
+        Some ynab classes have bugs. Override the functions with those bugs here,
+        to prevent exceptions.
+
+        Some classes have som bugged attributes.
+        Their value are sometimes None, while the class doesn't allow it to be none.
+        In such cases, an exception would occur if the class is instantiated. To
+        prevent this, we override the set() functions of those properties. The new
+        function definition simply sets the value, skipping the 'raise exception if
+        value is None' part.
+
         """
 
-        def type(self, type):
-            self._type = type
+        bugged_attributes = ['type', 'transfer_account_id', 'import_id', 'flag_color',
+                             'category_id', 'memo', 'payee_id', 'payee_name']
 
-        def transfer_account_id(self, transfer_account_id):
-            self._transfer_account_id = transfer_account_id
+        # Fix TransactionDetail
+        for attribute in bugged_attributes:
+            def fixed_setter(self, value):
+                setattr(self, f'_{attribute}', value)
 
-        def import_id(self, import_id):
-            self._import_id = import_id
+            setattr(TransactionDetail, attribute, fixed_setter)
 
-        TransactionDetail.transfer_account_id = transfer_account_id
-        TransactionDetail.import_id = import_id
-        Account.type = type
+        # Fix SubTransaction
+        bugged_attributes = ['payee_id', 'transfer_account_id', 'memo']
+        for attribute in bugged_attributes:
+            def fixed_setter(self, value):
+                setattr(self, f'_{attribute}', value)
+
+            setattr(SubTransaction, attribute, fixed_setter)
+
+        # Fix Account
+        bugged_attributes = ['type']
+        for attribute in bugged_attributes:
+            def fixed_setter(self, value):
+                setattr(self, f'_{attribute}', value)
+
+            setattr(Account, attribute, fixed_setter)

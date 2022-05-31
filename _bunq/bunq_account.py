@@ -8,7 +8,7 @@ from helpers.helpers import get_bunq_connector
 
 class BunqAccount:
     account_info: BunqModel
-    payments: List[Payment]
+    transactions: List[Payment]
 
     def __init__(self, acc: MonetaryAccount):
         """
@@ -16,8 +16,8 @@ class BunqAccount:
         """
         self.account_info = acc.get_referenced_object()
 
-    def load_payments(self) -> "BunqAccount":
-        self.payments = get_bunq_connector().get_payments(self.id)
+    def load_transactions(self) -> "BunqAccount":
+        self.transactions = get_bunq_connector().get_transactions(self.id)
         return self
 
     @property

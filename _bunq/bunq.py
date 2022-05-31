@@ -45,15 +45,13 @@ class Bunq:
         log("Transaction added!")
 
     @cache(ttl=60 * 60 * 24)
-    def get_accounts(self) -> List[BunqAccount]:
+    def get_bunq_accounts(self) -> List[BunqAccount]:
         """
         Get a list of all bunq accounts
         """
         return [BunqAccount(a) for a in endpoint.MonetaryAccount.list().value]
 
-    # Cache for a week
-    @cache(ttl=604800)
-    def get_payments(self, account_id: int) -> List[Payment]:
+    def get_transactions(self, account_id: int) -> List[Payment]:
         """
         Get the payments of a BunqAccount
         """
