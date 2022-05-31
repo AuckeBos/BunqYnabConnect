@@ -10,6 +10,7 @@ from bunq.sdk.model.core.bunq_model import BunqModel
 from bunq.sdk.model.generated import endpoint
 from bunq.sdk.model.generated.endpoint import Payment
 
+from bunq_account import BunqAccount
 from cache import cache
 from helpers import log, get_config, get_ynab_connector, retry
 from setup import BUNQ_CONFIG_FILE
@@ -118,23 +119,11 @@ class Bunq:
         })
         self._put_callbacks(callbacks)
 
-    @classmethod
-    def iban_of_bunqmodel(cls, model: BunqModel) -> str:
-        """
-        Get the iban of a bunqmodel
-        Todo: Create custom BunqModel class, add this method dto is
-        """
-        for alias in model.alias:
-            if alias.type_ == 'IBAN':
-                return alias.value
-        raise ValueError(f"Cannot find iban of bunq model {model}")
-
     @cache(ttl=60 * 60 * 24)
-    def get_accounts(self) -> List:
+    def get_accounts(self) -> List[BunqAccount]:
         """
         Get a list of all bunq accounts
         """
-        from bunq_account import BunqAccount
         return [BunqAccount(a) for a in endpoint.MonetaryAccount.list().value]
 
     # Cache for a week

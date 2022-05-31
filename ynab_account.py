@@ -28,3 +28,16 @@ class YnabAccount:
     def load_categories(self) -> "YnabAccount":
         self.categories = get_ynab_connector().get_categories(self.account_info.id)
         return self
+
+    @property
+    def iban(self) -> str:
+        """
+        A Ynab account normally doesn't have an Iban. This project works based on the
+        assumption that the user saves the Iban of the bunq account that is linked to
+        the ynab account, in its notes
+        """
+        return self.account_info.note
+
+    @property
+    def id(self) -> str:
+        return self.account_info.id

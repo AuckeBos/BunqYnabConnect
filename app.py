@@ -11,7 +11,6 @@ app = Flask(__name__)
 
 @app.route("/receive-transaction", methods=['GET', 'POST'])
 def receive_transaction():
-    print('ak')
     """
     Receive a transaction. Must be added as callback for any transaction of type
     MUTATION by Bunq

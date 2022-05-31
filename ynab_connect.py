@@ -25,27 +25,8 @@ class Ynab:
         """
         Create client
         """
-        self.monkey_patch_ynab()
+        self._monkey_patch_ynab()
         self.client = self._get_client()
-
-    def monkey_patch_ynab(self):
-        """
-        Some ynab classes have bugs. Override the functions with those bugs here,
-        to prevent exceptions
-        """
-
-        def type(self, type):
-            self._type = type
-
-        def transfer_account_id(self, transfer_account_id):
-            self._transfer_account_id = transfer_account_id
-
-        def import_id(self, import_id):
-            self._import_id = import_id
-
-        TransactionDetail.transfer_account_id = transfer_account_id
-        TransactionDetail.import_id = import_id
-        Account.type = type
 
     def add_transaction(self, iban: str, payee: str, value: float, memo: str) -> bool:
         """
@@ -61,7 +42,7 @@ class Ynab:
         account = self.iban_to_account(iban)
         budget_id = account.budget_id
         category = self._decide_category(budget_id, payee)
-        date = datetime.now()
+        date = datetime.datetime.now()
         value = int(value * 1000)  # Convert to the right units
         flag_color = 'blue'
         transaction = ynab.SaveTransaction(account_id=account.id,
@@ -87,9 +68,26 @@ class Ynab:
         """
         accounts = self.get_ynab_accounts()
         for account in accounts:
-            if account.account_info.note == iban:
+            if account.iban == iban:
                 return account
         raise YnabAccountNotFoundException(f"No account found for iban {iban}")
+
+    @cache(ttl=86400)
+    def get_ynab_accounts(self) -> List[YnabAccount]:
+        """
+        Get an array of all the accounts. Add property 'budget_id' to each account
+        :return:  The accounts
+        """
+        api = ynab.AccountsApi(self.client)
+        accounts = []
+        for b in self._get_budgets():
+            try:
+                for account in api.get_accounts(b.id).data.accounts:
+                    accounts.append(YnabAccount(account).set_budget_id(b.id))
+            except ApiException as e:
+                print(f"Exception when getting accounts: {e}")
+                raise e
+        return accounts
 
     def _decide_category(self, budget_id, payee: str) -> Category:
         """
@@ -150,34 +148,21 @@ class Ynab:
             print(f"Exception when getting budgets: {e}")
             raise e
 
-    @cache(ttl=86400)
-    def get_ynab_accounts(self) -> List[YnabAccount]:
+    def _monkey_patch_ynab(self):
         """
-        Get an array of all the accounts. Add property 'budget_id' to each account
-        :return:  The accounts
+        Some ynab classes have bugs. Override the functions with those bugs here,
+        to prevent exceptions
         """
-        api = ynab.AccountsApi(self.client)
-        accounts = []
-        for b in self._get_budgets():
-            try:
-                for account in api.get_accounts(b.id).data.accounts:
-                    account.budget_id = b.id
-                    accounts.append(YnabAccount(account).set_budget_id(b.id))
-            except ApiException as e:
-                print(f"Exception when getting accounts: {e}")
-                raise e
-        return accounts
 
-    @cache(ttl=60 * 60 * 24)
-    def _get_categories(self, account: Account) -> List[Category]:
-        """
-        Get an array of all the categories of an account
-        :return:  The categories
-        """
-        api = ynab.CategoriesApi(self.client)
-        categories = []
-        for categories in api.get_categories(budget_id = account.budget_id):
-            return None
-            account.budget_id = b.id
-            accounts.append(account)
-        return categories
+        def type(self, type):
+            self._type = type
+
+        def transfer_account_id(self, transfer_account_id):
+            self._transfer_account_id = transfer_account_id
+
+        def import_id(self, import_id):
+            self._import_id = import_id
+
+        TransactionDetail.transfer_account_id = transfer_account_id
+        TransactionDetail.import_id = import_id
+        Account.type = type
