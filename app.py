@@ -3,7 +3,7 @@ import threading
 
 from flask import Flask, request
 
-from bunq_connect import Bunq
+from helpers import get_bunq_connector
 from helpers import get_config
 
 app = Flask(__name__)
@@ -21,7 +21,6 @@ def receive_transaction():
     resulting in multiple ynab transactions
     """
     transaction = json.loads(request.data.decode())
-    # A
     threading.Thread(target=process_transaction, args=(transaction,)).start()
     return "OK", 200
 
@@ -30,8 +29,7 @@ def process_transaction(transaction):
     """
     Process a transaction, by claled add_transaction on bunq
     """
-    bunq = Bunq()
-    bunq.add_transaction(transaction)
+    get_bunq_connector().add_transaction(transaction)
 
 
 if __name__ == '__main__':
