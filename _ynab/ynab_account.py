@@ -19,7 +19,9 @@ class YnabAccount:
         return self
 
     def load_transactions(self) -> "YnabAccount":
-        self.transactions = get_ynab_connector().get_transactions(self)
+        transactions = get_ynab_connector().get_transactions(self)
+        # Sort by date asc
+        self.transactions = sorted(transactions, key=lambda t: t.date)
         return self
 
     @property
