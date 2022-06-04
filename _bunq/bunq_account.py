@@ -30,6 +30,7 @@ class BunqAccount:
         Update a bunq transaction: add date
         """
         t.date = parser.parse(t.created).date()
+        t.datetime = parser.parse(t.created)
         return t
 
     @property

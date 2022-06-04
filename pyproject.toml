@@ -13,6 +13,8 @@ Flask = "^2.0.3"
 cryptography = "^36.0.2"
 ynab-python = {git = "https://github.com/deanmcgregor/ynab-python.git"}
 scikit-learn = "^1.1.1"
+black = "^22.3.0"
+pandas = "^1.4.2"
 
 [tool.poetry.dev-dependencies]
 
