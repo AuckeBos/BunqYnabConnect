@@ -1,8 +1,10 @@
 from typing import List, Tuple
 
+import matplotlib
 import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, ShuffleSplit
 
 from _bunq.bunq_account import BunqAccount
 from _classifier.dataset import Dataset
@@ -51,22 +53,26 @@ class Classifier:
     def build_classifiers(self):
         for dataset in self.datasets:
             X, y = dataset.X, dataset.y
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=self.TEST_SIZE, random_state=self.RANDOM_STATE
+            splitter = ShuffleSplit(
+                n_splits=1, test_size=self.TEST_SIZE, random_state=self.RANDOM_STATE
+            )
+            splitter.get_n_splits(X)
+            train_idx, test_idx = next(splitter.split(X))
+
+            X_train, X_test, y_train, y_test = (
+                X.iloc[train_idx],
+                X.iloc[test_idx],
+                y.iloc[train_idx],
+                y.iloc[test_idx],
             )
             clf = tree.DecisionTreeClassifier()
             clf.fit(X_train, y_train)
 
             y_pred = clf.predict(X_test)
             acc = accuracy_score(y_test, y_pred)
-
-            predictions = np.array(
-                [
-                    *dataset.un_transform_set(X_test, y_test),
-                    dataset.un_transform_y(y_pred),
-                ]
-            ).transpose()
-
-            frame = pd.DataFrame(predictions, columns = ['X', 'y', 'y_pred'])
-
+            data = dataset.frame.iloc[test_idx]
+            data.insert(0, "prediction", dataset.un_transform_y(np.array(y_pred, int)))
+            matplotlib.rcParams["figure.dpi"] = 600
+            tree.plot_tree(clf)
+            plt.show()
             test = ""
