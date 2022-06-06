@@ -13,7 +13,7 @@ from _ynab.ynab_account import YnabAccount
 from helpers.cache import cache
 from helpers.helpers import get_bunq_connector
 from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 
 class Dataset:
@@ -73,6 +73,24 @@ class Dataset:
         accounts = self._load_accounts()
         transactions = self._load_transactions(accounts)
         return self._load_dataset(transactions)
+
+    def feature_names(self) -> List[str]:
+        return [f"description ({self.description_encoder.__class__.__name__})"] + [
+            f for f in self.X.columns.tolist() if "word_" not in f
+        ]
+
+    def un_transform_set(
+        self, X: pd.DataFrame, y: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        return self.un_transform_X(X), self.un_transform_y(y)
+
+    def un_transform_X(self, X: pd.DataFrame) -> pd.DataFrame:
+        return np.array(
+            [" ".join(x) for x in self.description_encoder.inverse_transform(X)]
+        )
+
+    def un_transform_y(self, y: NDArray) -> NDArray:
+        return self.category_encoder.inverse_transform(y)
 
     # a day
     @cache(60 * 60 * 24)
@@ -149,18 +167,19 @@ class Dataset:
             [
                 [
                     bunq_t.description,
-                    bunq_t.amount.value,
-                    bunq_t.datetime.hour,
-                    bunq_t.datetime.minute,
-                    bunq_t.datetime.weekday(),
+                    float(bunq_t.amount.value),
+                    int(bunq_t.datetime.hour),
+                    int(bunq_t.datetime.minute),
+                    int(bunq_t.datetime.weekday()),
                     ynab_t.category_name,
                 ]
                 for bunq_t, ynab_t in transactions
-            ]
+            ],
+            dtype="object",
         )
         # Convert descriptions into bag of words
         descriptions = data[:, 0]
-        description_encoder = CountVectorizer(lowercase=False)
+        description_encoder = TfidfVectorizer(lowercase=False)
         bag_of_words = np.array(
             description_encoder.fit_transform(descriptions).toarray()
         )
@@ -184,7 +203,7 @@ class Dataset:
                 "weekday",
                 "category_name",
                 "category",
-                *description_encoder.get_feature_names(),
+                *[f"word_{w}" for w in description_encoder.get_feature_names()],
             ],
         )
 
@@ -203,16 +222,3 @@ class Dataset:
         matched items, but we don't mind this for now
         """
         return y.date == b.date and round(y.amount / 1000, 2) == float(b.amount.value)
-
-    def un_transform_set(
-        self, X: pd.DataFrame, y: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        return self.un_transform_X(X), self.un_transform_y(y)
-
-    def un_transform_X(self, X: pd.DataFrame) -> pd.DataFrame:
-        return np.array(
-            [" ".join(x) for x in self.description_encoder.inverse_transform(X)]
-        )
-
-    def un_transform_y(self, y: NDArray) -> NDArray:
-        return self.category_encoder.inverse_transform(y)
