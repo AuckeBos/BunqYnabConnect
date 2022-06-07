@@ -1,15 +1,17 @@
+if __name__ == "__main__":
+    import fix_imports
 import json
+import os.path
 import threading
 
 from flask import Flask, request
 
-from helpers.helpers import get_bunq_connector
-from helpers.helpers import get_config
+from helpers.helpers import get_bunq_connector, get_config
 
 app = Flask(__name__)
 
 
-@app.route("/receive-transaction", methods=['GET', 'POST'])
+@app.route("/receive-transaction", methods=["GET", "POST"])
 def receive_transaction():
     """
     Receive a transaction. Must be added as callback for any transaction of type
@@ -32,10 +34,19 @@ def process_transaction(transaction):
     get_bunq_connector().add_transaction(transaction)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """
     Run the flask app indefinitely
     """
     cfg = get_config()
-
-    app.run(host=cfg["host"], port=cfg["port"], ssl_context=tuple(cfg["ssl_context"]), )
+    ssl_context = tuple(
+        [
+            f"{os.path.dirname(os.path.realpath(__file__))}/../../{f}"
+            for f in cfg["ssl_context"]
+        ]
+    )
+    app.run(
+        host=cfg["host"],
+        port=cfg["port"],
+        ssl_context=ssl_context,
+    )

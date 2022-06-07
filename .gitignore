@@ -1,5 +1,5 @@
-src/config
-src/cache
+config
+cache
 .idea
 __pycache__
 src/mlruns

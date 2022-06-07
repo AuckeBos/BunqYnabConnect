@@ -1,7 +1,11 @@
+if __name__ == "__main__":
+    import fix_imports
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 
-from payment_classification.experiments.hyperparameter_tuning_experiment import HyperparameterTuningExperiment
+from payment_classification.experiments.hyperparameter_tuning_experiment import (
+    HyperparameterTuningExperiment,
+)
 from helpers.helpers import load_datasets
 
 sets = load_datasets()
@@ -17,6 +21,7 @@ def tune_tree():
     clf = DecisionTreeClassifier()
     HyperparameterTuningExperiment(clf, space).run(set)
 
+
 def tune_forest():
     space = {
         "n_estimators": [100, 1000, 10000],
@@ -25,5 +30,7 @@ def tune_forest():
     }
     clf = RandomForestClassifier(n_jobs=-1)
     HyperparameterTuningExperiment(clf, space).run(set)
+
+
 
 tune_tree()
