@@ -1,7 +1,4 @@
-from typing import Tuple
-
 import mlflow
-import numpy as np
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
@@ -9,14 +6,14 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from _classifier.classifier import Classifier
-from _classifier.dataset import Dataset
-from experiments.base_experiment import BaseExperiment
+from payment_classification.classifier import Classifier
+from payment_classification.dataset import Dataset
+from payment_classification.experiments.base_experiment import BaseExperiment
 
 
 class ClassifierSelectionExperiment(BaseExperiment):
     """
-    An experiment to train many classification algorithms
+    An experiment to train and evaluate a list of classification algorithms
 
     ATTRIBUTES
     ----------
@@ -43,6 +40,6 @@ class ClassifierSelectionExperiment(BaseExperiment):
 
         for clf in self.CLASSIFIERS:
             try:
-                Classifier().train(clf, (X_train, X_test, y_train, y_test))
+                Classifier().train_evaluate(clf, (X_train, X_test, y_train, y_test))
             except Exception as e:
                 print(f"An Exception occurred: {e}")

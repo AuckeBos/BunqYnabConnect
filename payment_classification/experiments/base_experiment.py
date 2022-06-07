@@ -7,8 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import ShuffleSplit
 
-from _classifier.dataset import Dataset
-from helpers.helpers import get_ynab_connector
+from payment_classification.dataset import Dataset
 
 
 class BaseExperiment:
@@ -24,12 +23,17 @@ class BaseExperiment:
         seed
     TEST_SIZE = 0.1
         Test size (percentage)
+
+    EXPERIMENT_NAME: str
+        If set, use it as experiment name. Else use class name
     """
 
     run_id: str
 
     RANDOM_STATE = 1337
     TEST_SIZE = 0.1
+
+    EXPERIMENT_NAME: str = None
 
     @staticmethod
     def register_mlflow(func: Callable) -> Callable:
@@ -44,7 +48,7 @@ class BaseExperiment:
 
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):  # type: ignore
-            mlflow.set_experiment(self.__class__.__name__)
+            mlflow.set_experiment(self.experiment_name)
             mlflow.sklearn.autolog()
             with mlflow.start_run(run_name="experiment") as run:
                 self.run_id = run.info.run_id
@@ -91,3 +95,7 @@ class BaseExperiment:
         Run the experiment on a dataset
         """
         pass
+
+    @property
+    def experiment_name(self) -> str:
+        return self.EXPERIMENT_NAME or self.__class__.__name__

@@ -71,7 +71,7 @@ def get_ynab_connector():
 
 
 def load_datasets() -> List:
-    from _classifier.dataset import Dataset
+    from payment_classification.dataset import Dataset
     """
     Load all datasets, one for each budget
     """

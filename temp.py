@@ -1,9 +1,29 @@
-from _classifier.classifier import Classifier
-from experiments.classifier_selection_experiment import ClassifierSelectionExperiment
-from experiments.decision_tree_tuning_experiment import DecisionTreeTuningExperiment
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+from payment_classification.experiments.hyperparameter_tuning_experiment import HyperparameterTuningExperiment
 from helpers.helpers import load_datasets
 
 sets = load_datasets()
 set = sets[0]
-experiment = DecisionTreeTuningExperiment()
-experiment.run(set)
+
+
+def tune_tree():
+    space = {
+        "criterion": ["gini", "entropy", "log_loss"],
+        "splitter": ["best", "random"],
+        "max_depth": [3, 5, 10, 20, 50, None],
+    }
+    clf = DecisionTreeClassifier()
+    HyperparameterTuningExperiment(clf, space).run(set)
+
+def tune_forest():
+    space = {
+        "n_estimators": [100, 1000, 10000],
+        "criterion": ["gini", "entropy", "log_loss"],
+        "max_depth": [5, 10, 20, 50, 250, None],
+    }
+    clf = RandomForestClassifier(n_jobs=-1)
+    HyperparameterTuningExperiment(clf, space).run(set)
+
+tune_tree()
