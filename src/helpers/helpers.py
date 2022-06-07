@@ -50,7 +50,7 @@ def get_bunq_connector():
     """
     Get the BunqConnector as singleton
     """
-    from _bunq.bunq import Bunq
+    from bunq_ynab_connector._bunq.bunq import Bunq
 
     global _bunq_connector
     if _bunq_connector is None:
@@ -62,7 +62,7 @@ def get_ynab_connector():
     """
     Get the YNABConnector as singleton
     """
-    from _ynab.ynab import Ynab
+    from bunq_ynab_connector._ynab.ynab import Ynab
 
     global _ynab_connector
     if _ynab_connector is None:

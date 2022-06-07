@@ -1,15 +1,14 @@
 from datetime import datetime
-from typing import List
 
 import ynab
 from ynab import Account, Category, TransactionDetail, SubTransaction
 from ynab.rest import ApiException
 
-from _ynab.ynab_account import YnabAccount
+from bunq_ynab_connector._ynab.ynab_account import YnabAccount
 from helpers.cache import cache
 from helpers.exceptions import YnabAccountNotFoundException
 from helpers.helpers import *
-from _ynab.budget import Budget
+from bunq_ynab_connector._ynab.budget import Budget
 
 
 class Ynab:

@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from _ynab.ynab_account import YnabAccount
+from bunq_ynab_connector._ynab.ynab_account import YnabAccount
 from helpers.helpers import get_ynab_connector
 
 

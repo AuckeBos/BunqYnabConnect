@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List, Tuple
 
 import numpy as np
@@ -7,9 +6,9 @@ from bunq.sdk.model.generated.endpoint import Payment
 from numpy.typing import NDArray
 from ynab import TransactionDetail
 
-from _bunq.bunq_account import BunqAccount
-from _ynab.budget import Budget
-from _ynab.ynab_account import YnabAccount
+from bunq_ynab_connector._bunq.bunq_account import BunqAccount
+from bunq_ynab_connector._ynab.budget import Budget
+from bunq_ynab_connector._ynab.ynab_account import YnabAccount
 from helpers.cache import cache
 from helpers.helpers import get_bunq_connector
 from sklearn.preprocessing import LabelEncoder

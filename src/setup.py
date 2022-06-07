@@ -5,7 +5,7 @@ import requests
 from bunq import ApiEnvironmentType
 from bunq.sdk.context.api_context import ApiContext
 
-CONFIG_DIR = 'config'
+CONFIG_DIR = './config'
 CONFIG_FILE = f"{CONFIG_DIR}/cfg.json"
 BUNQ_CONFIG_FILE = f"{CONFIG_DIR}/bunq.cfg"
 
