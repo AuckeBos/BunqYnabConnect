@@ -1,5 +1,5 @@
 if __name__ == "__main__":
-    import fix_imports
+    import _fix_imports
 import json
 import os.path
 import threading

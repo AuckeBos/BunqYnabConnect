@@ -5,7 +5,7 @@ from functools import wraps
 from time import sleep
 from typing import List
 
-from setup import CONFIG_DIR, CONFIG_FILE
+from _setup.load_config import CONFIG_DIR, CONFIG_FILE
 
 LOGFILE = "log.log"
 _bunq_connector = None

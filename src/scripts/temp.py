@@ -1,5 +1,5 @@
 if __name__ == "__main__":
-    import fix_imports
+    import _fix_imports
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 
