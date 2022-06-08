@@ -17,3 +17,10 @@ if args.config:
     print("Running one-time config setup")
     from _setup.load_config import setup
     setup()
+if args.supervisor:
+    print("Setting up supervisor")
+    from _setup.setup_supervisord import setup
+    setup()
+
+else:
+    print('Please select a config task')
