@@ -9,7 +9,7 @@ def _add_supervisord_to_cron():
     print("Adding supervisor to cron, such that supervisord starts on reboot")
     dir = os.path.dirname(os.path.realpath(__file__))
     supervisord_loc = "$(poetry run which supervisord)"
-    config_dir = f"{dir}../../supervisor/supervisord.conf"
+    config_dir = f"{dir}/../../supervisor/supervisord.conf"
     cron_line = f"@reboot {supervisord_loc} -c {config_dir} 2>&1"
     user = subprocess.check_output("whoami").strip().decode("utf-8")
     command = f'(crontab -u {user} -l; echo "{cron_line}") | crontab -u {user} -'

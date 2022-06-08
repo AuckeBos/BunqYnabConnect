@@ -3,3 +3,5 @@ cache
 .idea
 __pycache__
 src/mlruns
+supervisor/logs/*.log
+supervisor/logs/childlogs/*.log
