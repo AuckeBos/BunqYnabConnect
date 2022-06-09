@@ -5,3 +5,5 @@ __pycache__
 src/mlruns
 supervisor/logs/*.log
 supervisor/logs/childlogs/*.log
+supervisor/supervisord.conf
+supervisor/supervisord.pid

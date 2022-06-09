@@ -11,7 +11,7 @@ pidfile=%(here)s/supervisord.pid
 childlogdir=%(here)s/logs/childlogs
 
 [program:BunqYnabConnect]
-
+user=<USER> # This placeholder will by replaced during setup
 autostart=true # Start directly
 autorestart=true # Always restart
 directory=%(here)s/../src/scripts # Run in src folder
