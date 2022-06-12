@@ -5,6 +5,7 @@ from typing import List, Callable, Tuple
 import mlflow
 import numpy as np
 import pandas as pd
+from mlflow.entities import Run
 from sklearn.model_selection import ShuffleSplit
 
 from payment_classification.dataset import Dataset
@@ -26,6 +27,9 @@ class BaseExperiment:
 
     EXPERIMENT_NAME: str
         If set, use it as experiment name. Else use class name
+
+    best_run: run
+        The run that showed to contain the best model. Set in select_best_run()
     """
 
     run_id: str
@@ -34,6 +38,8 @@ class BaseExperiment:
     TEST_SIZE = 0.1
 
     EXPERIMENT_NAME: str = None
+
+    best_run: Run
 
     @staticmethod
     def register_mlflow(func: Callable) -> Callable:
@@ -89,6 +95,10 @@ class BaseExperiment:
             )
         return X_train, X_test, y_train, y_test
 
+    @property
+    def experiment_name(self) -> str:
+        return self.EXPERIMENT_NAME or self.__class__.__name__
+
     @abstractmethod
     def run(self, dataset: Dataset) -> None:
         """
@@ -96,6 +106,9 @@ class BaseExperiment:
         """
         pass
 
-    @property
-    def experiment_name(self) -> str:
-        return self.EXPERIMENT_NAME or self.__class__.__name__
+    @abstractmethod
+    def select_best_run(self) -> None:
+        """
+        Of all children runs, select the one with the best performing model
+        """
+        pass

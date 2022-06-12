@@ -23,14 +23,15 @@ class ClassifierSelectionExperiment(BaseExperiment):
 
     # https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html
     CLASSIFIERS = [
-        KNeighborsClassifier(),
-        SVC(kernel="linear", C=0.025),
-        SVC(gamma=2, C=1),
+        # KNeighborsClassifier(),
+        # SVC(kernel="linear", C=0.025),
+        # SVC(gamma=2, C=1),
         DecisionTreeClassifier(max_depth=5),
-        RandomForestClassifier(max_depth=5, n_estimators=10),
-        MLPClassifier(alpha=1, max_iter=1000),
-        AdaBoostClassifier(),
-        GaussianNB(),
+        DecisionTreeClassifier(max_depth=10),
+        # RandomForestClassifier(max_depth=5, n_estimators=10),
+        # MLPClassifier(alpha=1, max_iter=1000),
+        # AdaBoostClassifier(),
+        # GaussianNB(),
     ]
 
     @BaseExperiment.register_mlflow
@@ -43,3 +44,10 @@ class ClassifierSelectionExperiment(BaseExperiment):
                 Classifier().train_evaluate(clf, (X_train, X_test, y_train, y_test))
             except Exception as e:
                 print(f"An Exception occurred: {e}")
+        self.select_best_run()
+
+    def select_best_run(self) -> None:
+        runs = mlflow.search_runs(
+            filter_string=f"tags.mlflow.parentRunId = '{self.run_id}'"
+        )
+        # Todo: Select and save best

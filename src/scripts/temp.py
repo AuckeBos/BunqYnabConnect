@@ -1,3 +1,6 @@
+from payment_classification.experiments.classifier_selection_experiment import \
+    ClassifierSelectionExperiment
+
 if __name__ == "__main__":
     import _fix_imports
 from sklearn.ensemble import RandomForestClassifier
@@ -24,13 +27,15 @@ def tune_tree():
 
 def tune_forest():
     space = {
-        "n_estimators": [100, 1000, 10000],
+        "n_estimators": [100, 1000, 2500],
         "criterion": ["gini", "entropy", "log_loss"],
         "max_depth": [5, 10, 20, 50, 250, None],
     }
     clf = RandomForestClassifier(n_jobs=-1)
     HyperparameterTuningExperiment(clf, space).run(set)
 
+def test():
+    ClassifierSelectionExperiment().run(set)
 
 
-tune_tree()
+test()

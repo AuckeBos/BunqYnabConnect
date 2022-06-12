@@ -12,7 +12,7 @@ from bunq.sdk.model.generated.endpoint import Payment
 from bunq_ynab_connector._bunq.bunq_account import BunqAccount
 from helpers.cache import cache
 from helpers.helpers import log, get_config, get_ynab_connector, retry
-from setup import BUNQ_CONFIG_FILE
+from _setup.load_config import BUNQ_CONFIG_FILE
 
 warnings.filterwarnings('ignore')
 
