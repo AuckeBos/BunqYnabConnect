@@ -109,6 +109,7 @@ class BaseExperiment:
     @abstractmethod
     def select_best_run(self) -> None:
         """
-        Of all children runs, select the one with the best performing model
+        Of all children runs, select the one with the best performing model. Set on
+        self.best_run
         """
         pass

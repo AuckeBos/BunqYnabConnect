@@ -36,6 +36,7 @@ class ClassifierSelectionExperiment(BaseExperiment):
 
     @BaseExperiment.register_mlflow
     def run(self, dataset: Dataset):
+        self.__class__.__str__()
         mlflow.log_text(",".join(dataset.feature_names()), "features.txt")
         X_train, X_test, y_train, y_test = self.split_to_sets(dataset.X, dataset.y)
 
@@ -50,4 +51,7 @@ class ClassifierSelectionExperiment(BaseExperiment):
         runs = mlflow.search_runs(
             filter_string=f"tags.mlflow.parentRunId = '{self.run_id}'"
         )
-        # Todo: Select and save best
+        runs = runs.sort_values('metrics.cohens_kappa', ascending=False)
+        best_run_row = runs.iloc[0]
+        best_run_id = best_run_row['run_id']
+        self.best_run = mlflow.get_run(best_run_id)
