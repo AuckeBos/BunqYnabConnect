@@ -24,19 +24,16 @@ class ClassifierSelectionExperiment(BaseExperiment):
     # https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html
     CLASSIFIERS = [
         # KNeighborsClassifier(),
-        # SVC(kernel="linear", C=0.025),
-        # SVC(gamma=2, C=1),
-        DecisionTreeClassifier(max_depth=5),
-        DecisionTreeClassifier(max_depth=10),
-        # RandomForestClassifier(max_depth=5, n_estimators=10),
-        # MLPClassifier(alpha=1, max_iter=1000),
+        # SVC(),
+        DecisionTreeClassifier(),
+        # RandomForestClassifier(n_estimators=200),
+        # MLPClassifier(max_iter=1000, solver='lbfgs'),
         # AdaBoostClassifier(),
         # GaussianNB(),
     ]
 
     @BaseExperiment.register_mlflow
     def run(self, dataset: Dataset):
-        self.__class__.__str__()
         mlflow.log_text(",".join(dataset.feature_names()), "features.txt")
         X_train, X_test, y_train, y_test = self.split_to_sets(dataset.X, dataset.y)
 

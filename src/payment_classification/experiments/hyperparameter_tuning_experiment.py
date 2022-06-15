@@ -23,6 +23,7 @@ class HyperparameterTuningExperiment(BaseExperiment):
     """
 
     clf: BaseEstimator
+    grid_search: GridSearchCV
     space: Dict
 
     def __init__(self, clf: BaseEstimator, space: Dict):
@@ -42,8 +43,13 @@ class HyperparameterTuningExperiment(BaseExperiment):
         y_pred = best_clf.predict(X_test)
         score = self.score(y_test, y_pred)
         print(f"Score of best clf: {score}")
-        mlflow.log_metric("cohen_kappa", score)
+        mlflow.log_metric("cohens_kappa", score)
+        self.select_best_run()
+        self.grid_search = clf
 
     @classmethod
     def score(cls, y, y_pred):
         return Classifier.evaluate(y, y_pred)[-1]
+
+    def select_best_run(self) -> None:
+        self.best_run = mlflow.get_run(self.run_id)

@@ -1,10 +1,16 @@
+import os
+
+import numpy as np
+from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-
+import pickle
 from bunq_ynab_connector._ynab.budget import Budget
+from helpers.helpers import log
 from payment_classification.dataset import Dataset
 from payment_classification.experiments.classifier_selection_experiment import (
     ClassifierSelectionExperiment,
@@ -35,30 +41,109 @@ class ModelSelector:
 
     # Todo: add
     HYPERPARAMETER_SPACES = {
-        KNeighborsClassifier.__class__.__name__: {},
-        SVC.__class__.__name__: {},
-        DecisionTreeClassifier.__class__.__name__: {},
-        RandomForestClassifier.__class__.__name__: {},
-        MLPClassifier.__class__.__name__: {},
-        AdaBoostClassifier.__class__.__name__: {},
-        GaussianNB__class__.__name__: {},
+        KNeighborsClassifier().__class__.__name__: {
+            "n_neighbors": [3, 5, 10, 25],
+            "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
+        },
+        SVC().__class__.__name__: {
+            "C": [0.5, 1, 2],
+            "kernel": ["linear", "poly", "rbf", "sigmoid"],
+            "gamma": ["scale", "auto", 3],
+            "shrinking": [True, False],
+        },
+        # DecisionTreeClassifier().__class__.__name__: {
+        #     "criterion": ["gini", "entropy", "log_loss"],
+        #     "splitter": ["best", "random"],
+        #     "max_depth": [3, 5, 10, 20, 50, None],
+        # },
+        DecisionTreeClassifier().__class__.__name__: {
+            "max_depth": [
+                3,
+                5,
+            ],
+        },
+        RandomForestClassifier().__class__.__name__: {
+            "n_estimators": [100, 1000, 2500],
+            "criterion": ["gini", "entropy", "log_loss"],
+            "max_depth": [5, 10, 20, 50, 250, None],
+        },
+        MLPClassifier().__class__.__name__: {
+            "max_iter": [1000],
+            "activation": ["tanh", "relu"],
+            "solver": ["lbfgs", "sgd"],
+            "alpha": [0.01, 0.1, 1],
+            "learning_rate": ["contant", "adaptive"],
+            "learning_rate_init": [0.01, 0.001, 0.0001],
+        },
+        AdaBoostClassifier().__class__.__name__: {"n_estimators": [25, 50, 100, 250]},
+        GaussianNB().__class__.__name__: {},
     }
 
     def __init__(self, dataset: Dataset):
         self.dataset = dataset
 
     def select(self):
-        # wip
+        """
+        Select the best model:
+        - Select the best classifier
+        - Select the best parameters for it
+        - Train it on the full set
+        - Save to filesystem
+
+        Todo: also need transformers to transform x and y on predict
+        """
+        log(f"Selecting the best model for budget {self.dataset.budget.id}")
+        cls_name = self._select_best_classifier_class()
+        log(f"The best classifier is {cls_name}")
+        parameters = self._select_best_parameters(cls_name)
+        log(f"The best parameters are {parameters}")
+        classifier = self._fully_train_best_classifier(cls_name, parameters)
+        dir = f"../payment_classification/models/{self.dataset.budget.id}"
+        os.makedirs(dir)
+        path = f"{dir}/model.pkl"
+        with open(path, 'wb+') as f:
+            pickle.dump(classifier, f)
+        log(f"Classifier saved in {path}")
+
+
+    def _select_best_classifier_class(self) -> str:
+        """
+        Select the best estimator class, by running the ClassifierSelectionExperiment
+        Returns
+        -------
+        The class name
+        """
         experiment = ClassifierSelectionExperiment()
         experiment.run(self.dataset)
-        classifier_class = experiment.best_run.data.tags["estimator_class"]
-        classifier_class_name = classifier_class.split(".")[-1]
-        hyper_space = self.HYPERPARAMETER_SPACES[classifier_class_name]
 
-        experiment = HyperparameterTuningExperiment(
-            eval(classifier_class)(), hyper_space
-        )
+        cls = experiment.best_run.data.tags["estimator_class"]
+        cls_name = cls.split(".")[-1]
+        return cls_name
 
+    def _select_best_parameters(self, cls_name: str) -> dict:
+        """
+        Select the best set of hyperparameters for the classifier for the budget
+        """
+        hyper_space = self.HYPERPARAMETER_SPACES[cls_name]
 
-        # Todo: Create map of classifier to hyperparam map. Select item run
-        #  experiment, set resultint data
+        experiment = HyperparameterTuningExperiment(eval(cls_name)(), hyper_space)
+        experiment.run(self.dataset)
+        params = experiment.grid_search.best_params_
+        return params
+
+    def _fully_train_best_classifier(
+        self, cls_name: str, hyperparameters: dict
+    ) -> BaseEstimator:
+        """
+        After the best classifier and its best params have been selected, create a new
+        instance of the classifier with the best params, train it on the full dataset,
+        return the trained classifier
+        """
+        classifier = eval(cls_name)(**hyperparameters)
+
+        # Todo; fix below
+        X = np.array(self.dataset.X)
+        y = np.array(self.dataset.y, int)
+
+        classifier.fit(X, y)
+        return classifier

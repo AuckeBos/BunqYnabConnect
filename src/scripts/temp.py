@@ -1,5 +1,6 @@
 from payment_classification.experiments.classifier_selection_experiment import \
     ClassifierSelectionExperiment
+from payment_classification.model_selector import ModelSelector
 
 if __name__ == "__main__":
     import _fix_imports
@@ -35,7 +36,7 @@ def tune_forest():
     HyperparameterTuningExperiment(clf, space).run(set)
 
 def test():
-    ClassifierSelectionExperiment().run(set)
+    ModelSelector(set).select()
 
 
 test()

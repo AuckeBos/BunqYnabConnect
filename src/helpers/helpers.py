@@ -7,7 +7,7 @@ from typing import List
 
 from _setup.load_config import CONFIG_DIR, CONFIG_FILE
 
-LOGFILE = "log.log"
+LOGFILE = "../log.log"
 _bunq_connector = None
 _ynab_connector = None
 
@@ -17,10 +17,12 @@ def log(msg, error=False):
     Helper function to log any data to stdout
     """
     typestring = "E" if error else "I"
-    print(
+    log = (
         f'[{typestring}] [{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}] - '
         f"{msg}"
     )
+    with open(LOGFILE, 'a') as f:
+        f.write(log)
 
 
 def setup_needed() -> bool:
