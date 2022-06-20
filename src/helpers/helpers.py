@@ -1,13 +1,18 @@
 import datetime
 import json
 import os
+import pickle
 from functools import wraps
 from time import sleep
-from typing import List
+from typing import List, Any
+
+from mlflow import log_artifact
+from sklearn.pipeline import Pipeline
 
 from _setup.load_config import CONFIG_DIR, CONFIG_FILE
+from payment_classification.feature_extractor import FeatureExtractor
 
-LOGFILE = "../log.log"
+LOGFILE = "../../log.log"
 _bunq_connector = None
 _ynab_connector = None
 
@@ -21,7 +26,7 @@ def log(msg, error=False):
         f'[{typestring}] [{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}] - '
         f"{msg}"
     )
-    with open(LOGFILE, 'a') as f:
+    with open(LOGFILE, "a") as f:
         f.write(log)
 
 
@@ -74,6 +79,7 @@ def get_ynab_connector():
 
 def load_datasets() -> List:
     from payment_classification.dataset import Dataset
+
     """
     Load all datasets, one for each budget
     """
@@ -119,3 +125,32 @@ def retry(max_attempts: int, message: str = None):
         return wrapper
 
     return decorator
+
+
+def object_to_mlflow(obj: Any, name: str) -> None:
+    """
+    Save an object to an artifact by:
+    - Saving the object to a temp pickle file
+    - Saving the temp pickle file as artifact in the current mlfow run
+    Parameters
+    ----------
+    obj: Any
+        The dict to save
+    name: str
+        The artefact name
+    """
+    with open("../helpers/artifact.pickle", "wb+") as handle:
+        pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    log_artifact("../helpers/artifact.pickle", name)
+
+
+def build_pipeline(cls) -> Pipeline:
+    """
+    Build a pipeline for a classifier, eg prefixing the feature extractor
+    """
+    return Pipeline(
+        steps=[
+            ("feature_extractor", FeatureExtractor()),
+            ("classifier", cls),
+        ]
+    )

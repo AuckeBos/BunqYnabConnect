@@ -1,5 +1,6 @@
 import os
 
+import mlflow.sklearn
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
@@ -10,7 +11,8 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 import pickle
 from bunq_ynab_connector._ynab.budget import Budget
-from helpers.helpers import log
+from helpers.helpers import log, build_pipeline
+from payment_classification.classifier import Classifier
 from payment_classification.dataset import Dataset
 from payment_classification.experiments.classifier_selection_experiment import (
     ClassifierSelectionExperiment,
@@ -18,10 +20,6 @@ from payment_classification.experiments.classifier_selection_experiment import (
 from payment_classification.experiments.hyperparameter_tuning_experiment import (
     HyperparameterTuningExperiment,
 )
-
-
-class GaussianNB__class__:
-    pass
 
 
 class ModelSelector:
@@ -39,7 +37,6 @@ class ModelSelector:
 
     dataset: Dataset
 
-    # Todo: add
     HYPERPARAMETER_SPACES = {
         KNeighborsClassifier().__class__.__name__: {
             "n_neighbors": [3, 5, 10, 25],
@@ -92,19 +89,25 @@ class ModelSelector:
 
         Todo: also need transformers to transform x and y on predict
         """
-        log(f"Selecting the best model for budget {self.dataset.budget.id}")
+        budget_id = self.dataset.budget.id
+        log(f"Selecting the best model for budget {budget_id}")
         cls_name = self._select_best_classifier_class()
         log(f"The best classifier is {cls_name}")
         parameters = self._select_best_parameters(cls_name)
         log(f"The best parameters are {parameters}")
         classifier = self._fully_train_best_classifier(cls_name, parameters)
-        dir = f"../payment_classification/models/{self.dataset.budget.id}"
-        os.makedirs(dir)
-        path = f"{dir}/model.pkl"
-        with open(path, 'wb+') as f:
-            pickle.dump(classifier, f)
-        log(f"Classifier saved in {path}")
+        dir = f"{budget_id}"
+        # os.makedirs(dir)
+        path = f"model"
+        mlflow.sklearn.log_model(
+            classifier,
+            artifact_path=path,
+            registered_model_name=f"Classifier for Budget {budget_id}",
+        )
 
+        # with open(path, "wb+") as f:
+        #     pickle.dump(classifier, f)
+        log(f"Classifier saved in {path}")
 
     def _select_best_classifier_class(self) -> str:
         """
@@ -116,9 +119,8 @@ class ModelSelector:
         experiment = ClassifierSelectionExperiment()
         experiment.run(self.dataset)
 
-        cls = experiment.best_run.data.tags["estimator_class"]
-        cls_name = cls.split(".")[-1]
-        return cls_name
+        cls = experiment.best_run.data.tags["_estimator_class"]
+        return cls
 
     def _select_best_parameters(self, cls_name: str) -> dict:
         """
@@ -140,10 +142,10 @@ class ModelSelector:
         return the trained classifier
         """
         classifier = eval(cls_name)(**hyperparameters)
+        pipeline = build_pipeline(classifier)
 
-        # Todo; fix below
         X = np.array(self.dataset.X)
         y = np.array(self.dataset.y, int)
 
-        classifier.fit(X, y)
-        return classifier
+        pipeline.fit(X, y)
+        return pipeline

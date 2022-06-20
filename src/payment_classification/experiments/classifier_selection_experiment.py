@@ -34,14 +34,11 @@ class ClassifierSelectionExperiment(BaseExperiment):
 
     @BaseExperiment.register_mlflow
     def run(self, dataset: Dataset):
-        mlflow.log_text(",".join(dataset.feature_names()), "features.txt")
-        X_train, X_test, y_train, y_test = self.split_to_sets(dataset.X, dataset.y)
-
         for clf in self.CLASSIFIERS:
-            try:
-                Classifier().train_evaluate(clf, (X_train, X_test, y_train, y_test))
-            except Exception as e:
-                print(f"An Exception occurred: {e}")
+            # try:
+                Classifier().train_evaluate(clf, dataset)
+            # except Exception as e:
+            #     print(f"An Exception occurred: {e}")
         self.select_best_run()
 
     def select_best_run(self) -> None:

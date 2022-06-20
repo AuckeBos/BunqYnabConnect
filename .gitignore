@@ -7,3 +7,7 @@ supervisor/logs/*.log
 supervisor/logs/childlogs/*.log
 supervisor/supervisord.conf
 supervisor/supervisord.pid
+src/artifacts
+mlflow.db
+src/helpers/artifact.pickle
+log.log

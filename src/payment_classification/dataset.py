@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from bunq.sdk.model.generated.endpoint import Payment
 from numpy.typing import NDArray
+from sklearn.preprocessing import LabelEncoder
 from ynab import TransactionDetail
 
 from bunq_ynab_connector._bunq.bunq_account import BunqAccount
@@ -11,8 +12,6 @@ from bunq_ynab_connector._ynab.budget import Budget
 from bunq_ynab_connector._ynab.ynab_account import YnabAccount
 from helpers.cache import cache
 from helpers.helpers import get_bunq_connector
-from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 
 class Dataset:
@@ -23,41 +22,30 @@ class Dataset:
         The budget to which this dataset belongs. We create one dataset (and thus one
         classifier) for each budget, as each budget has its own categories
 
-    frame: pd.DataFrame
-        All data that is used, as frame
-
     category_encoder: LabelEncoder
         The encoder that encodes ynab-transaction categories into integers (the labels)
-    y: pd.DataFrame
+    y: NDArray
         Labels of the dataset: categories as integers
 
-    description_encoder: CountVectorizer
-        The encoder that encodes bunq-transaction 'Descriptions' into vectors, using BOW
-    X: pd.DataFrame
-        Items to classify. BOW representation of descriptions of bunq transactions
-
-
-
+    X: NDArray[Payment]
+        Items to classify. Will be transformed into a frame using the FeatureExtractor
     """
 
     budget: Budget
 
-    frame: pd.DataFrame
-
     category_encoder: LabelEncoder
-    y: pd.DataFrame
+    y: NDArray
 
-    description_encoder: CountVectorizer
-    X: pd.DataFrame
+    X: NDArray[Payment]
 
     def __init__(self, budget):
         """
         Save the budget as property, and load X, y
         """
         self.budget = budget
-        self.X, self.y, self.frame = self._load()
+        self.X, self.y = self._load()
 
-    def _load(self) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def _load(self) -> Tuple[NDArray[Payment], NDArray]:
         """
         Load the dataset.
 
@@ -66,30 +54,11 @@ class Dataset:
         - For each tuple, load and match all transactions. Keep a list of all matched
             transactions
         - Each match is a bunq-ynab transaction combination. Build y by StringEncoding
-            the 'category' of the ynab transaction. Build X by the BOW representation of
-            the 'description' of the bunq transaction
+            the 'category' of the ynab transaction.
         """
         accounts = self._load_accounts()
         transactions = self._load_transactions(accounts)
         return self._load_dataset(transactions)
-
-    def feature_names(self) -> List[str]:
-        return [f"description ({self.description_encoder.__class__.__name__})"] + [
-            f for f in self.X.columns.tolist() if "word_" not in f
-        ]
-
-    def un_transform_set(
-        self, X: pd.DataFrame, y: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        return self.un_transform_X(X), self.un_transform_y(y)
-
-    def un_transform_X(self, X: pd.DataFrame) -> pd.DataFrame:
-        return np.array(
-            [" ".join(x) for x in self.description_encoder.inverse_transform(X)]
-        )
-
-    def un_transform_y(self, y: NDArray) -> NDArray:
-        return self.category_encoder.inverse_transform(y)
 
     # a day
     @cache(60 * 60 * 24)
@@ -146,65 +115,20 @@ class Dataset:
 
     def _load_dataset(
         self, transactions: List[Tuple[Payment, TransactionDetail]]
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> Tuple[NDArray[Payment], NDArray]:
         """
         Build y as the categories of YnabTransactions (as int)
-        Build X as the descriptions of BunqTransactions (as BOW)
+        Build X as simply the list of Transactions. The feature extraction is done
+        through the FeatureExtractor
         """
         transactions = np.array(transactions)
-        frame = self._build_frame(transactions)
-        X = frame.copy().drop(columns=["description", "category_name", "category"])
-        # X = frame.copy().drop(columns=["description", "category_name"])
-        y = frame.copy()[["category"]]
-        return X, y, frame
 
-    def _build_frame(
-        self, transactions: NDArray[Tuple[Payment, TransactionDetail]]
-    ) -> pd.DataFrame:
-        # Load all data
-        data = np.array(
-            [
-                [
-                    bunq_t.description,
-                    float(bunq_t.amount.value),
-                    int(bunq_t.datetime.hour),
-                    int(bunq_t.datetime.minute),
-                    int(bunq_t.datetime.weekday()),
-                    ynab_t.category_name,
-                ]
-                for bunq_t, ynab_t in transactions
-            ],
-            dtype="object",
-        )
-        # Convert descriptions into bag of words
-        descriptions = data[:, 0]
-        description_encoder = TfidfVectorizer(lowercase=False)
-        bag_of_words = np.array(
-            description_encoder.fit_transform(descriptions).toarray()
-        )
-        self.description_encoder = description_encoder
-
-        # Convert categories into ints
-        categories = data[:, 5]
+        categories = [t.category_name for t in transactions[:, 1]]
         category_encoder = LabelEncoder()
-        category_ints = category_encoder.fit_transform(categories)
-        category_ints = np.reshape(category_ints, (category_ints.shape[0], 1))
+        y = category_encoder.fit_transform(categories)
         self.category_encoder = category_encoder
-        # Merge into one array, and convert to frame
-        data = np.concatenate((data, category_ints, bag_of_words), axis=1)
-        return pd.DataFrame(
-            data,
-            columns=[
-                "description",
-                "amount",
-                "hour",
-                "minute",
-                "weekday",
-                "category_name",
-                "category",
-                *[f"word_{w}" for w in description_encoder.get_feature_names()],
-            ],
-        )
+        X = transactions[:, 0]
+        return X, y
 
     @classmethod
     def _is_invalid_ynab_transaction(cls, transaction: TransactionDetail) -> bool:

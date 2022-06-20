@@ -4,10 +4,13 @@ import mlflow
 from sklearn.base import BaseEstimator
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
 
+from helpers.helpers import build_pipeline
 from payment_classification.classifier import Classifier
 from payment_classification.dataset import Dataset
 from payment_classification.experiments.base_experiment import BaseExperiment
+from payment_classification.feature_extractor import FeatureExtractor
 
 
 class HyperparameterTuningExperiment(BaseExperiment):
@@ -33,19 +36,26 @@ class HyperparameterTuningExperiment(BaseExperiment):
 
     @BaseExperiment.register_mlflow
     def run(self, dataset: Dataset):
-        mlflow.log_text(",".join(dataset.feature_names()), "features.txt")
-        X_train, X_test, y_train, y_test = self.split_to_sets(dataset.X, dataset.y)
         score = make_scorer(self.score, greater_is_better=True)
-        clf = GridSearchCV(self.clf, self.space, scoring=score)
-        clf.fit(X_train, y_train)
+        grid_search = GridSearchCV(self.clf, self.space, scoring=score)
 
-        best_clf = clf.best_estimator_
+        pipeline = build_pipeline(grid_search)
+
+        X_train, X_test, y_train, y_test = Classifier.split_to_sets(dataset)
+        pipeline.fit(X_train, y_train)
+
+        mlflow.log_text(
+            ",".join(pipeline["feature_extractor"].feature_names()), "features.txt"
+        )
+
+        best_clf = grid_search.best_estimator_
+        X_test = pipeline["feature_extractor"].transform(X_test)
         y_pred = best_clf.predict(X_test)
         score = self.score(y_test, y_pred)
         print(f"Score of best clf: {score}")
         mlflow.log_metric("cohens_kappa", score)
         self.select_best_run()
-        self.grid_search = clf
+        self.grid_search = grid_search
 
     @classmethod
     def score(cls, y, y_pred):
