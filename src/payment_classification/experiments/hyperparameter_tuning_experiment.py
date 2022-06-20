@@ -39,17 +39,16 @@ class HyperparameterTuningExperiment(BaseExperiment):
         score = make_scorer(self.score, greater_is_better=True)
         grid_search = GridSearchCV(self.clf, self.space, scoring=score)
 
-        pipeline = build_pipeline(grid_search)
+        feature_extractor = FeatureExtractor()
 
         X_train, X_test, y_train, y_test = Classifier.split_to_sets(dataset)
-        pipeline.fit(X_train, y_train)
+        X_train, X_test = feature_extractor.fit_transform(
+            X_train
+        ), feature_extractor.transform(X_test)
 
-        mlflow.log_text(
-            ",".join(pipeline["feature_extractor"].feature_names()), "features.txt"
-        )
-
+        mlflow.log_text(",".join(feature_extractor.feature_names()), "features.txt")
+        grid_search.fit(X_train, y_train)
         best_clf = grid_search.best_estimator_
-        X_test = pipeline["feature_extractor"].transform(X_test)
         y_pred = best_clf.predict(X_test)
         score = self.score(y_test, y_pred)
         print(f"Score of best clf: {score}")

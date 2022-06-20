@@ -11,7 +11,7 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 import pickle
 from bunq_ynab_connector._ynab.budget import Budget
-from helpers.helpers import log, build_pipeline
+from helpers.helpers import log, build_pipeline, object_to_mlflow
 from payment_classification.classifier import Classifier
 from payment_classification.dataset import Dataset
 from payment_classification.experiments.classifier_selection_experiment import (
@@ -86,8 +86,6 @@ class ModelSelector:
         - Select the best parameters for it
         - Train it on the full set
         - Save to filesystem
-
-        Todo: also need transformers to transform x and y on predict
         """
         budget_id = self.dataset.budget.id
         log(f"Selecting the best model for budget {budget_id}")
@@ -95,19 +93,7 @@ class ModelSelector:
         log(f"The best classifier is {cls_name}")
         parameters = self._select_best_parameters(cls_name)
         log(f"The best parameters are {parameters}")
-        classifier = self._fully_train_best_classifier(cls_name, parameters)
-        dir = f"{budget_id}"
-        # os.makedirs(dir)
-        path = f"model"
-        mlflow.sklearn.log_model(
-            classifier,
-            artifact_path=path,
-            registered_model_name=f"Classifier for Budget {budget_id}",
-        )
-
-        # with open(path, "wb+") as f:
-        #     pickle.dump(classifier, f)
-        log(f"Classifier saved in {path}")
+        self._fully_train_best_classifier(cls_name, parameters)
 
     def _select_best_classifier_class(self) -> str:
         """
@@ -141,11 +127,25 @@ class ModelSelector:
         instance of the classifier with the best params, train it on the full dataset,
         return the trained classifier
         """
-        classifier = eval(cls_name)(**hyperparameters)
-        pipeline = build_pipeline(classifier)
 
-        X = np.array(self.dataset.X)
-        y = np.array(self.dataset.y, int)
+        mlflow.set_experiment("Full training")
+        mlflow.sklearn.autolog()
+        with mlflow.start_run(run_name="experiment") as run:
+            classifier = eval(cls_name)(**hyperparameters)
+            pipeline = build_pipeline(classifier)
 
-        pipeline.fit(X, y)
-        return pipeline
+            X = np.array(self.dataset.X)
+            y = np.array(self.dataset.y, int)
+
+            pipeline.fit(X, y)
+            object_to_mlflow(pipeline["feature_extractor"], "feature_extractor")
+
+            path = "model"
+            mlflow.sklearn.log_model(
+                classifier,
+                artifact_path=path,
+                registered_model_name=f"Classifier for Budget {self.dataset.budget.id}",
+            )
+            # Todo: model artifact not added, cannot extract model nor feature extractor
+
+        log(f"Classifier saved in {path}")

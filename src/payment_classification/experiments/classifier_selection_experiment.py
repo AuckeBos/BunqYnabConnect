@@ -35,10 +35,10 @@ class ClassifierSelectionExperiment(BaseExperiment):
     @BaseExperiment.register_mlflow
     def run(self, dataset: Dataset):
         for clf in self.CLASSIFIERS:
-            # try:
+            try:
                 Classifier().train_evaluate(clf, dataset)
-            # except Exception as e:
-            #     print(f"An Exception occurred: {e}")
+            except Exception as e:
+                print(f"An Exception occurred: {e}")
         self.select_best_run()
 
     def select_best_run(self) -> None:
