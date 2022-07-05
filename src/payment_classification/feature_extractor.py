@@ -25,7 +25,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         "weekday",
     ]
 
-    def fit(self, X: List[Payment], y = None) -> "DataPreprocessor":
+    def fit(self, X: List[Payment], y=None) -> "FeatureExtractor":
 
         # Fit TFIDF encoder
         descriptions = [t.description for t in X]
@@ -34,7 +34,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         self.description_encoder = description_encoder
         return self
 
-    def transform(self, X: List[Payment], y = None) -> pd.DataFrame:
+    def transform(self, X: List[Payment], y=None) -> pd.DataFrame:
         # Load all data
         data = np.array(
             [
@@ -60,7 +60,10 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
             data[:, 1:],
             columns=[
                 *self.COLUMNS,
-                *[f"word_{w}" for w in self.description_encoder.get_feature_names_out()],
+                *[
+                    f"word_{w}"
+                    for w in self.description_encoder.get_feature_names_out()
+                ],
             ],
         )
 

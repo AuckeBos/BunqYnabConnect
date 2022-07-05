@@ -39,14 +39,8 @@ class HyperparameterTuningExperiment(BaseExperiment):
         score = make_scorer(self.score, greater_is_better=True)
         grid_search = GridSearchCV(self.clf, self.space, scoring=score)
 
-        feature_extractor = FeatureExtractor()
-
         X_train, X_test, y_train, y_test = Classifier.split_to_sets(dataset)
-        X_train, X_test = feature_extractor.fit_transform(
-            X_train
-        ), feature_extractor.transform(X_test)
 
-        mlflow.log_text(",".join(feature_extractor.feature_names()), "features.txt")
         grid_search.fit(X_train, y_train)
         best_clf = grid_search.best_estimator_
         y_pred = best_clf.predict(X_test)

@@ -35,17 +35,17 @@ class ClassifierSelectionExperiment(BaseExperiment):
     @BaseExperiment.register_mlflow
     def run(self, dataset: Dataset):
         for clf in self.CLASSIFIERS:
-            try:
-                Classifier().train_evaluate(clf, dataset)
-            except Exception as e:
-                print(f"An Exception occurred: {e}")
+            # try:
+            Classifier().train_evaluate(clf, dataset)
+            # except Exception as e:
+            #     print(f"An Exception occurred: {e}")
         self.select_best_run()
 
     def select_best_run(self) -> None:
         runs = mlflow.search_runs(
             filter_string=f"tags.mlflow.parentRunId = '{self.run_id}'"
         )
-        runs = runs.sort_values('metrics.cohens_kappa', ascending=False)
+        runs = runs.sort_values("metrics.cohens_kappa", ascending=False)
         best_run_row = runs.iloc[0]
-        best_run_id = best_run_row['run_id']
+        best_run_id = best_run_row["run_id"]
         self.best_run = mlflow.get_run(best_run_id)

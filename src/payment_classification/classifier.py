@@ -6,9 +6,7 @@ from bunq.sdk.model.generated.endpoint import Payment
 from numpy.typing import NDArray
 from sklearn.metrics import accuracy_score, precision_score, f1_score, cohen_kappa_score
 from sklearn.model_selection import ShuffleSplit
-from sklearn.pipeline import Pipeline
 
-from helpers.helpers import object_to_mlflow, build_pipeline
 from payment_classification.dataset import Dataset
 from payment_classification.feature_extractor import FeatureExtractor
 
@@ -36,21 +34,17 @@ class Classifier:
         Train a classifier, log to mlflow
         """
         clf_class = clf.__class__.__name__
-
         with mlflow.start_run(nested=True, run_name=clf_class):
-            mlflow.set_tag("_estimator_class", clf_class)
-            object_to_mlflow(dataset.category_encoder, "LabelTransformer")
+            # Split
             X_train, X_test, y_train, y_test = self.split_to_sets(dataset)
-            pipeline = build_pipeline(clf)
-            pipeline.fit(X_train, y_train)
-            mlflow.log_text(
-                ",".join(pipeline["feature_extractor"].feature_names()), "features.txt"
-            )
-            y_pred = pipeline.predict(X_test)
+            # Fit
+            clf.fit(X_train, y_train)
+            # Predict and evaluate
+            y_pred = clf.predict(X_test)
             y_pred = np.array(y_pred, int)
 
             self.evaluate(y_test, y_pred)
-            mlflow.sklearn.log_model(pipeline, clf_class)
+            mlflow.sklearn.log_model(clf, clf_class)
 
     @classmethod
     def evaluate(
@@ -90,9 +84,22 @@ class Classifier:
         cls, dataset: Dataset
     ) -> Tuple[NDArray[Payment], NDArray[Payment], NDArray, NDArray]:
         """
-        Split a dataset into 1 train,test split, return sets
+        Split a dataset into 1 train,test split, return sets.
+        Also:
+        - Create a feature_extractor
+        - Fit it on the complete X, and transform the train and test Xs
+        - Log feature extractor feature names to mlflow. Hence this function only
+        works while in an active mlflow run!
         """
         X, y = dataset.X, dataset.y
+
+        # Fit and transform X into features
+        feature_extractor = FeatureExtractor()
+        X = feature_extractor.fit_transform(X, y)
+        X, y = np.array(X), np.array(y)
+        # Log features
+        mlflow.log_text(",".join(feature_extractor.feature_names()), "features.txt")
+
         train_idx, test_idx = cls.split_to_idx(X)
         X_train, X_test, y_train, y_test = (
             X[train_idx],

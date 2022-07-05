@@ -2,6 +2,7 @@ import os
 
 import mlflow.sklearn
 import numpy as np
+from mlflow.models import infer_signature
 from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
@@ -20,6 +21,7 @@ from payment_classification.experiments.classifier_selection_experiment import (
 from payment_classification.experiments.hyperparameter_tuning_experiment import (
     HyperparameterTuningExperiment,
 )
+from payment_classification.feature_extractor import FeatureExtractor
 
 
 class ModelSelector:
@@ -88,7 +90,7 @@ class ModelSelector:
         - Save to filesystem
         """
         budget_id = self.dataset.budget.id
-        log(f"Selecting the best model for budget {budget_id}")
+        log(f"Selecting the best classifier for budget {budget_id}")
         cls_name = self._select_best_classifier_class()
         log(f"The best classifier is {cls_name}")
         parameters = self._select_best_parameters(cls_name)
@@ -105,8 +107,9 @@ class ModelSelector:
         experiment = ClassifierSelectionExperiment()
         experiment.run(self.dataset)
 
-        cls = experiment.best_run.data.tags["_estimator_class"]
-        return cls
+        cls = experiment.best_run.data.tags["estimator_class"]
+        cls_name = cls.split(".")[-1]
+        return cls_name
 
     def _select_best_parameters(self, cls_name: str) -> dict:
         """
@@ -132,20 +135,25 @@ class ModelSelector:
         mlflow.sklearn.autolog()
         with mlflow.start_run(run_name="experiment") as run:
             classifier = eval(cls_name)(**hyperparameters)
-            pipeline = build_pipeline(classifier)
 
-            X = np.array(self.dataset.X)
-            y = np.array(self.dataset.y, int)
+            X, y = np.array(self.dataset.X), np.array(self.dataset.y, int)
+            # Create feature extractor and transform X. Log extractor as object
+            feature_extractor = FeatureExtractor()
+            X = feature_extractor.fit_transform(X, y)
+            object_to_mlflow(feature_extractor, "feature_extractor")
+            # Log label transformer to mlflow as well
+            object_to_mlflow(self.dataset.category_encoder, "category_encoder")
+            # Fit and log
+            classifier.fit(X, y)
 
-            pipeline.fit(X, y)
-            object_to_mlflow(pipeline["feature_extractor"], "feature_extractor")
+            signature = infer_signature(X, y)
 
             path = "model"
             mlflow.sklearn.log_model(
                 classifier,
                 artifact_path=path,
                 registered_model_name=f"Classifier for Budget {self.dataset.budget.id}",
+                signature=signature
             )
-            # Todo: model artifact not added, cannot extract model nor feature extractor
 
         log(f"Classifier saved in {path}")

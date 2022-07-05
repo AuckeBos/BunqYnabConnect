@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 from _setup.load_config import CONFIG_DIR, CONFIG_FILE
 from payment_classification.feature_extractor import FeatureExtractor
 
-LOGFILE = "../../log.log"
+LOGFILE = "../log.log"
 _bunq_connector = None
 _ynab_connector = None
 
@@ -22,12 +22,12 @@ def log(msg, error=False):
     Helper function to log any data to stdout
     """
     typestring = "E" if error else "I"
-    log = (
+    txt = (
         f'[{typestring}] [{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}] - '
-        f"{msg}"
+        f"{msg}\n"
     )
     with open(LOGFILE, "a") as f:
-        f.write(log)
+        f.write(txt)
 
 
 def setup_needed() -> bool:
