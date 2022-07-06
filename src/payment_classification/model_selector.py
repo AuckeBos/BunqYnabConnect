@@ -1,8 +1,10 @@
 import os
+from datetime import datetime
 
 import mlflow.sklearn
 import numpy as np
 from mlflow.models import infer_signature
+from mlflow.tracking import MlflowClient
 from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
@@ -96,6 +98,8 @@ class ModelSelector:
         parameters = self._select_best_parameters(cls_name)
         log(f"The best parameters are {parameters}")
         self._fully_train_best_classifier(cls_name, parameters)
+        log(f"Best classifier configuration trained")
+        self._bring_model_into_production()
 
     def _select_best_classifier_class(self) -> str:
         """
@@ -149,11 +153,39 @@ class ModelSelector:
             signature = infer_signature(X, y)
 
             path = "model"
+            model_name = self._get_model_name()
             mlflow.sklearn.log_model(
                 classifier,
                 artifact_path=path,
-                registered_model_name=f"Classifier for Budget {self.dataset.budget.id}",
-                signature=signature
+                registered_model_name=model_name,
+                signature=signature,
             )
 
-        log(f"Classifier saved in {path}")
+    def _bring_model_into_production(self):
+        """
+        Bringing the model into production means:
+        - Call transition_model_version_stage with the version just created. Retrieve
+        the version number by getting the latest version
+        - Update model description
+        """
+        client = MlflowClient()
+        model_name = self._get_model_name()
+        # Get the version of the just logged model
+        version = client.get_latest_versions(model_name, stages=["None"])[0].version
+        # Transition the just trained model into production
+        client.transition_model_version_stage(
+            name=model_name, version=version, stage="Production"
+        )
+        date = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+        set_size = len(self.dataset.X)
+        client.update_model_version(
+            name=model_name,
+            version=version,
+            description=f"This model has been trained on {date}, on {set_size} "
+                        f"transactions",
+        )
+
+        log(f"Classifier deployed")
+
+    def _get_model_name(self):
+        return f"Classifier for Budget {self.dataset.budget.id}"
