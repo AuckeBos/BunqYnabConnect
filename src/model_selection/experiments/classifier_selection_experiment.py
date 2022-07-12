@@ -6,9 +6,9 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from payment_classification.classifier import Classifier
-from payment_classification.dataset import Dataset
-from payment_classification.experiments.base_experiment import BaseExperiment
+from model_selection.classifier import Classifier
+from model_selection.dataset import Dataset
+from model_selection.experiments.base_experiment import BaseExperiment
 
 
 class ClassifierSelectionExperiment(BaseExperiment):
@@ -34,11 +34,12 @@ class ClassifierSelectionExperiment(BaseExperiment):
 
     @BaseExperiment.register_mlflow
     def run(self, dataset: Dataset):
+        mlflow.set_tag("budget", dataset.budget.id)
         for clf in self.CLASSIFIERS:
-            # try:
-            Classifier().train_evaluate(clf, dataset)
-            # except Exception as e:
-            #     print(f"An Exception occurred: {e}")
+            try:
+                Classifier().train_evaluate(clf, dataset)
+            except Exception as e:
+                print(f"An Exception occurred: {e}")
         self.select_best_run()
 
     def select_best_run(self) -> None:

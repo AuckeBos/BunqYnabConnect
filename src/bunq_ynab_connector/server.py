@@ -1,5 +1,5 @@
 if __name__ == "__main__":
-    import _fix_imports
+    pass
 import json
 import os.path
 import threading
@@ -34,7 +34,7 @@ def process_transaction(transaction):
     get_bunq_connector().add_transaction(transaction)
 
 
-if __name__ == "__main__":
+def run():
     """
     Run the flask app indefinitely
     """

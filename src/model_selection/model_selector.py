@@ -1,29 +1,20 @@
-import os
-from datetime import datetime
+from typing import Any, Dict, Tuple
 
-import mlflow.sklearn
-import numpy as np
-from mlflow.models import infer_signature
-from mlflow.tracking import MlflowClient
-from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-import pickle
-from bunq_ynab_connector._ynab.budget import Budget
-from helpers.helpers import log, build_pipeline, object_to_mlflow
-from payment_classification.classifier import Classifier
-from payment_classification.dataset import Dataset
-from payment_classification.experiments.classifier_selection_experiment import (
+
+from helpers.helpers import log
+from model_selection.dataset import Dataset
+from model_selection.experiments.classifier_selection_experiment import (
     ClassifierSelectionExperiment,
 )
-from payment_classification.experiments.hyperparameter_tuning_experiment import (
+from model_selection.experiments.hyperparameter_tuning_experiment import (
     HyperparameterTuningExperiment,
 )
-from payment_classification.feature_extractor import FeatureExtractor
 
 
 class ModelSelector:
@@ -83,23 +74,20 @@ class ModelSelector:
     def __init__(self, dataset: Dataset):
         self.dataset = dataset
 
-    def select(self):
+    def select(self) -> Tuple[str, Dict[str, Any]]:
         """
         Select the best model:
         - Select the best classifier
         - Select the best parameters for it
-        - Train it on the full set
-        - Save to filesystem
+        Return classifier class and hyper parameter set
         """
-        budget_id = self.dataset.budget.id
-        log(f"Selecting the best classifier for budget {budget_id}")
+        log(f"Selecting the best classifier")
         cls_name = self._select_best_classifier_class()
         log(f"The best classifier is {cls_name}")
         parameters = self._select_best_parameters(cls_name)
         log(f"The best parameters are {parameters}")
-        self._fully_train_best_classifier(cls_name, parameters)
-        log(f"Best classifier configuration trained")
-        self._bring_model_into_production()
+
+        return cls_name, parameters
 
     def _select_best_classifier_class(self) -> str:
         """
@@ -125,67 +113,3 @@ class ModelSelector:
         experiment.run(self.dataset)
         params = experiment.grid_search.best_params_
         return params
-
-    def _fully_train_best_classifier(
-        self, cls_name: str, hyperparameters: dict
-    ) -> BaseEstimator:
-        """
-        After the best classifier and its best params have been selected, create a new
-        instance of the classifier with the best params, train it on the full dataset,
-        return the trained classifier
-        """
-
-        mlflow.set_experiment("Full training")
-        mlflow.sklearn.autolog()
-        with mlflow.start_run(run_name="experiment") as run:
-            classifier = eval(cls_name)(**hyperparameters)
-
-            X, y = np.array(self.dataset.X), np.array(self.dataset.y, int)
-            # Create feature extractor and transform X. Log extractor as object
-            feature_extractor = FeatureExtractor()
-            X = feature_extractor.fit_transform(X, y)
-            object_to_mlflow(feature_extractor, "feature_extractor")
-            # Log label transformer to mlflow as well
-            object_to_mlflow(self.dataset.category_encoder, "category_encoder")
-            # Fit and log
-            classifier.fit(X, y)
-
-            signature = infer_signature(X, y)
-
-            path = "model"
-            model_name = self._get_model_name()
-            mlflow.sklearn.log_model(
-                classifier,
-                artifact_path=path,
-                registered_model_name=model_name,
-                signature=signature,
-            )
-
-    def _bring_model_into_production(self):
-        """
-        Bringing the model into production means:
-        - Call transition_model_version_stage with the version just created. Retrieve
-        the version number by getting the latest version
-        - Update model description
-        """
-        client = MlflowClient()
-        model_name = self._get_model_name()
-        # Get the version of the just logged model
-        version = client.get_latest_versions(model_name, stages=["None"])[0].version
-        # Transition the just trained model into production
-        client.transition_model_version_stage(
-            name=model_name, version=version, stage="Production"
-        )
-        date = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
-        set_size = len(self.dataset.X)
-        client.update_model_version(
-            name=model_name,
-            version=version,
-            description=f"This model has been trained on {date}, on {set_size} "
-                        f"transactions",
-        )
-
-        log(f"Classifier deployed")
-
-    def _get_model_name(self):
-        return f"Classifier for Budget {self.dataset.budget.id}"

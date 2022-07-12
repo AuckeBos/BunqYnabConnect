@@ -40,3 +40,6 @@ Execute the following step once, to setup the server:
        user={YOUR_USER}
        command=poetry run python app.py
    ```
+   
+# Todos
+Use an ML orchestratin tool, like [Kubeflow](https://www.kubeflow.org/)

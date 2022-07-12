@@ -56,16 +56,19 @@ class Dataset:
         - Each match is a bunq-ynab transaction combination. Build y by StringEncoding
             the 'category' of the ynab transaction.
         """
-        accounts = self._load_accounts()
+        accounts = self._load_accounts(self.budget.id)
+        if not len(accounts):
+            return None, None
         transactions = self._load_transactions(accounts)
         return self._load_dataset(transactions)
 
     # a day
     @cache(60 * 60 * 24)
-    def _load_accounts(self) -> List[Tuple[BunqAccount, YnabAccount]]:
+    def _load_accounts(self, budget_id: str) -> List[Tuple[BunqAccount, YnabAccount]]:
         """
         Load Bunq-Ynab account tuples, by matching YnabAccount descriptions with
         BunqAccount ibans
+        budget_id param is to make sure we have a unique cache key for each budget
         """
         result = []
         ynab_accounts = self.budget.accounts
@@ -145,3 +148,10 @@ class Dataset:
         matched items, but we don't mind this for now
         """
         return y.date == b.date and round(y.amount / 1000, 2) == float(b.amount.value)
+
+    @property
+    def is_valid(self):
+        """
+        A dataset is invalid if we have found no data
+        """
+        return self.X is not None and self.y is not None

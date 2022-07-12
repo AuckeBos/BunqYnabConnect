@@ -4,13 +4,10 @@ import mlflow
 from sklearn.base import BaseEstimator
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import GridSearchCV
-from sklearn.pipeline import Pipeline
 
-from helpers.helpers import build_pipeline
-from payment_classification.classifier import Classifier
-from payment_classification.dataset import Dataset
-from payment_classification.experiments.base_experiment import BaseExperiment
-from payment_classification.feature_extractor import FeatureExtractor
+from model_selection.classifier import Classifier
+from model_selection.dataset import Dataset
+from model_selection.experiments.base_experiment import BaseExperiment
 
 
 class HyperparameterTuningExperiment(BaseExperiment):
@@ -36,6 +33,7 @@ class HyperparameterTuningExperiment(BaseExperiment):
 
     @BaseExperiment.register_mlflow
     def run(self, dataset: Dataset):
+        mlflow.set_tag("budget", dataset.budget.id)
         score = make_scorer(self.score, greater_is_better=True)
         grid_search = GridSearchCV(self.clf, self.space, scoring=score)
 

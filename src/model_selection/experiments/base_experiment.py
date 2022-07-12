@@ -10,7 +10,7 @@ from mlflow.entities import Run
 from numpy.typing import NDArray
 from sklearn.model_selection import ShuffleSplit
 
-from payment_classification.dataset import Dataset
+from model_selection.dataset import Dataset
 
 
 class BaseExperiment:

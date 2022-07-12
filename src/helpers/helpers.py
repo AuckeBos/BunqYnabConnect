@@ -7,28 +7,37 @@ from time import sleep
 from typing import List, Any
 
 from mlflow import log_artifact
-from sklearn.pipeline import Pipeline
 
 from _setup.load_config import CONFIG_DIR, CONFIG_FILE
-from payment_classification.feature_extractor import FeatureExtractor
+
 
 LOGFILE = "../log.log"
 _bunq_connector = None
 _ynab_connector = None
 
 
-def log(msg, error=False):
+def log(msg, error=False, with_divider = False):
     """
     Helper function to log any data to stdout
+    Parameters
+    ----------
+    msg: str
+        The msg to log
+    error: bool = False
+        Prefix with 'E' if True, else 'I'
+    with_divider: bool = False
+        If true, surround with dividers
     """
     typestring = "E" if error else "I"
     txt = (
         f'[{typestring}] [{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}] - '
         f"{msg}\n"
     )
+    if with_divider:
+        divider = f"{'=' * len(txt)}\n"
+        txt = f"{divider}{txt}{divider}"
     with open(LOGFILE, "a") as f:
         f.write(txt)
-
 
 def setup_needed() -> bool:
     """
@@ -78,18 +87,25 @@ def get_ynab_connector():
 
 
 def load_datasets() -> List:
-    from payment_classification.dataset import Dataset
+    from model_selection.dataset import Dataset
 
     """
     Load all datasets, one for each budget
     """
+    log("Loading datasets")
     datasets = []
     budgets = get_ynab_connector().get_budgets()
     for budget in budgets:
         # Remove below on production
-        if budget.budget_info.name != "Aucke":
-            continue
-        datasets.append(Dataset(budget.load_info()))
+        # if budget.budget_info.name != "Maaike":
+        #     continue
+        dataset = Dataset(budget.load_info())
+        if not dataset.is_valid:
+            log(f"Skipping invalid dataset {dataset.budget.id}")
+        else:
+            datasets.append(dataset)
+            log(f"Dataset loaded for budget {budget.id}")
+    log("Finished loading datasets")
     return datasets
 
 
@@ -144,13 +160,8 @@ def object_to_mlflow(obj: Any, name: str) -> None:
     log_artifact("../helpers/artifact.pickle", name)
 
 
-def build_pipeline(cls) -> Pipeline:
+def get_mlflow_model_name(dataset) -> str:
     """
-    Build a pipeline for a classifier, eg prefixing the feature extractor
+    Get the name under which to deploy the model for this dataset
     """
-    return Pipeline(
-        steps=[
-            ("feature_extractor", FeatureExtractor()),
-            ("classifier", cls),
-        ]
-    )
+    return f"Classifier for Budget {dataset.budget.id}"

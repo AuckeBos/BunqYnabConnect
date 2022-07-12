@@ -7,8 +7,8 @@ from numpy.typing import NDArray
 from sklearn.metrics import accuracy_score, precision_score, f1_score, cohen_kappa_score
 from sklearn.model_selection import ShuffleSplit
 
-from payment_classification.dataset import Dataset
-from payment_classification.feature_extractor import FeatureExtractor
+from model_selection.dataset import Dataset
+from model_selection.feature_extractor import FeatureExtractor
 
 
 class Classifier:
