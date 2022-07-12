@@ -4,14 +4,16 @@ import os
 import pickle
 from functools import wraps
 from time import sleep
-from typing import List, Any
+from typing import List, Any, Optional
 
 from mlflow import log_artifact
 
 from _setup.load_config import CONFIG_DIR, CONFIG_FILE
 
 
-LOGFILE = "../log.log"
+LOGFILE = "../../logs/output.log"
+MODEL_PORT_FILE = f"{CONFIG_DIR}/model_ports.json"
+FLASK_LOG_FILE = "../../logs/flask.log"
 _bunq_connector = None
 _ynab_connector = None
 
@@ -44,6 +46,18 @@ def setup_needed() -> bool:
     Check whether the setup has been ran. If not, return True
     """
     return not os.path.exists(CONFIG_DIR)
+
+def get_model_port(dataset) -> Optional[int]:
+    """
+    Get the port on which a model is currently being served. The port is set whenever
+    the ModelServer is served()'d
+    """
+    budget_id = dataset.budget.id
+    with open(MODEL_PORT_FILE, 'r+') as file:
+        ports = json.load(file)
+        if budget_id not in ports:
+            return None
+        return ports[budget_id]
 
 
 def get_config(key=None):

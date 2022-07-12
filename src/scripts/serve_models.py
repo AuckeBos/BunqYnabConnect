@@ -1,17 +1,21 @@
-from model_selection.model_deployer import ModelDeployer
-
 if __name__ == "__main__":
-    print('yes')
     import _fix_imports
-else:
-    print(__name__)
+from threading import Thread
+
+from model_selection.model_server import ModelServer
 from helpers.helpers import load_datasets
-from model_selection.model_selector import ModelSelector
+import random
+
 
 # For each set:
-# 1. Serve the currently deployed model
+# 1. Load a random port to serve it one
+# 2. Create a model server
+# 3. Set the port to serve on. This also saves it to FS, to look it up for prediction
+# 4. Serve async
 if __name__ == "__main__":
     sets = load_datasets()
     for set in sets:
-        classifier_class, hyper_parameters = ModelSelector(set).select()
-        ModelDeployer(set).deploy(classifier_class, hyper_parameters)
+        port = random.randint(1024, 65535)
+        server = ModelServer(set)
+        server.port = port
+        Thread(target=server.serve).start()

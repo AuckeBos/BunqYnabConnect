@@ -53,7 +53,11 @@ def _setup_config():
         "currency": input("What is your default currency code?: "),
     }
     os.mkdir(CONFIG_DIR)
-    os.mkdir("../../cache")
+    os.mkdir("../cache")
+    # Create empty model port file
+    from helpers.helpers import MODEL_PORT_FILE
+    with open(MODEL_PORT_FILE, "x") as file:
+        json.dump({}, file)
     with open(CONFIG_FILE, "x") as file:
         json.dump(cfg, file)
 

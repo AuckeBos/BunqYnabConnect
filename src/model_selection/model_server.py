@@ -1,42 +1,73 @@
+import json
 import os
 
 import mlflow.pyfunc
 from flask import Flask
+from sklearn.base import ClassifierMixin
 
-from helpers.helpers import get_config
+from helpers.helpers import (
+    get_config,
+    MODEL_PORT_FILE,
+    get_model_port,
+    get_mlflow_model_name,
+    log,
+)
+from model_selection.dataset import Dataset
 
 
 class ModelServer:
     """
     WIP:
     https://newbedev.com/using-flask-inside-class
+
+    ATTRIBUTES
+    ----------
+    app: Flask
+        The flask app
+    dataset: Dataset
+        The dataset for the model
     """
 
     app: Flask
+    dataset: Dataset
+    model: ClassifierMixin
 
-    def __init__(self):
-        self.app = Flask('ModelServer')
-        model_url = "models:/Classifier for Budget XXX/Production"
+    def __init__(self, dataset: Dataset):
+        self.app = Flask("ModelServer")
+        self.dataset = dataset
+        model_url = f"models:/{get_mlflow_model_name(dataset)}/Production"
         self.model = mlflow.sklearn.load_model(model_url)
-        test = ''
-
 
     def serve(self):
-        port = "5002"
-
-        cfg = get_config()
-        ssl_context = tuple(
-            [
-                f"{os.path.dirname(os.path.realpath(__file__))}/../../{f}"
-                for f in cfg["ssl_context"]
-            ]
-        )
+        port = self.port
+        if port is None:
+            raise Exception(
+                f"Cannot serve budget {self.dataset.budget.id}, "
+                f"please set the port to serve on first"
+            )
+        budget = self.dataset.budget
         self.app.add_url_rule("/predict", "predict", self.predict)
-        self.app.run(
-            host="localhost",
-            port=port,
-            ssl_context=ssl_context,
-        )
+        endpoint = f"http://localhost:{port}"
+        log_msg = f"ENDPOINT FOR BUDGET {budget.id}: {endpoint}"
+        log(log_msg, False, True)
+        self.app.run(host="localhost", port=port)
 
-    def predict(self):
-        pass
+    @property
+    def port(self) -> int:
+        return get_model_port(self.dataset)
+
+    @port.setter
+    def port(self, port: int):
+        """
+        Save the port on which this model is served, to file system
+        """
+
+        with open(MODEL_PORT_FILE, "r") as file:
+            ports = json.load(file)
+
+        with open(MODEL_PORT_FILE, "w") as file:
+            ports[self.dataset.budget.id] = port
+            json.dump(ports, file)
+
+    def predict(self, *args):
+        log(str(args))

@@ -11,3 +11,4 @@ src/artifacts
 mlflow.db
 src/helpers/artifact.pickle
 log.log
+logs/*.log
