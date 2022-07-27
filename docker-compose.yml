@@ -1,9 +1,0 @@
-version: '3'
-services:
-  bunq_ynab_server:
-    build: .
-    command: ["/app/src/scripts/bash/docker_boot.sh"]
-    volumes:
-      - .:/app
-    ports:
-      - "10000:15000"

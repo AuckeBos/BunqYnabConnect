@@ -1,20 +1,28 @@
-#Deriving the latest base image
-FROM python:latest
-#Labels as key value pair
+FROM python:3.8
 LABEL Maintainer="Aucke Bos"
 
+# Copy src
+COPY src /app
+
 WORKDIR /app
-# Install poetry
+
+# Install poetry, and install dependencies without creating a venv
 RUN pip install poetry
-
-
 COPY pyproject.toml poetry.lock /app/
+RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
+
+# Install crontab, create empty cron
 RUN apt-get update -y
-RUN apt-get install -y python3-scipy
-RUN poetry config virtualenvs.create false \
-  && poetry install --no-interaction --no-ansi
+RUN apt-get install -y cron
+RUN touch empty_cron.txt
+RUN crontab empty_cron.txt
 
-#CMD instruction should be used to run the software
-#contained by your image, along with any arguments.
+# Copy supervisor folder
+COPY supervisor/supervisord.conf /usr/local/etc/supervisord.conf
+# Copy docker entrypoint data
+COPY docker/entrypoint /entrypoint
+# Copy config data
+COPY config /config
 
-#CMD [ "python", "./test.py"]
+# Set entrypoint
+ENTRYPOINT "/entrypoint/docker_boot.sh"

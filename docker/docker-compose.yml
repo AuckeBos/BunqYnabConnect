@@ -1,0 +1,8 @@
+version: '3'
+services:
+  bunq_ynab_server:
+    build: ../
+    volumes:
+      - ../logs:/logs
+    ports:
+      - "10000-10006:10000-10006"

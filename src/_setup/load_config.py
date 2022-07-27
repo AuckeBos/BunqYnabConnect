@@ -16,10 +16,15 @@ def setup():
         exit()
     print(
         "Before continuing, make sure you have \na) your _bunq api key \nb) your _ynab "
-        "api token\nc) The paths of the private key and chainfile of your ssl key"
+        "api token\n"
     )
     input("Press enter to key to continue...")
     _setup_config()
+    print(
+        "Config dir created. Please copy your private key and chainfile to the "
+        "config dir, named privkey.pem and fullchain.pem respectively"
+    )
+    input("Press enter to key to continue...")
     _setup_bunq()
 
 
@@ -33,29 +38,21 @@ def _setup_config():
         or "0.0.0.0",
         "port": input(
             "On which port should the server listen? Note that this port should "
-            "be forwarded in your private network. [9888]: "
+            "be forwarded in your private network. The port should be within range ["
+            "10001, 10006], or you should manually change your docker-compose [10001]: "
         )
-        or 9888,
+        or 10001,
         "hostname": input(
             "On which url is the host found (bunq connects to this " "url)?: "
         ),
         "ynab_token": input("What is your YNAB api token?: "),
-        "ssl_context": (
-            input(
-                "Where is your chain file (.pem) file located, relative to the "
-                "root of this repo?: "
-            ),
-            input(
-                "Where is your privatekey (.pem) file located, relative to the "
-                "root of this repo?: "
-            ),
-        ),
+        "ssl_context": ("/config/fullchain.pem", "/config/privkey.pem"),
         "currency": input("What is your default currency code?: "),
     }
     os.mkdir(CONFIG_DIR)
-    os.mkdir("../cache")
     # Create empty model port file
     from helpers.helpers import MODEL_PORT_FILE
+
     with open(MODEL_PORT_FILE, "x") as file:
         json.dump({}, file)
     with open(CONFIG_FILE, "x") as file:

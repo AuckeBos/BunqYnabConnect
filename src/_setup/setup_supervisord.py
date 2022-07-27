@@ -39,7 +39,7 @@ def _add_supervisord_to_cron():
     """
     print("Adding supervisor to cron, such that supervisord starts on reboot")
     supervisor_dir = _supervisor_dir()
-    supervisord_loc = "$(poetry run which supervisord)"
+    supervisord_loc = "$(which supervisord)"
     config_file = f"{supervisor_dir}/supervisord.conf"
     cron_line = f"@reboot {supervisord_loc} -c {config_file} 2>&1"
     user = _user()
