@@ -1,16 +1,13 @@
 #!/usr/bin/env sh
-# If supervisor setup had never been ran, do so
-
-/usr/local/bin/supervisord
-#if [ ! -d "/supervisor/supervisord.conf" ]
-#then
-#  echo "Running the one-time supervisor setup"
-#  cd /app/scripts
-#  python setup.py --supervisor
-#fi
-# Create cache dir, if doesnt exist yet
-mkdir -p /cache
-echo 'Done!'
-tail -f /dev/null
-#touch /test.txt
-#mlflow server --host=0.0.0.0 --port=10000 --backend-store-uri sqlite:///../../mlflow.db --default-artifact-root artifacts
+# CD into the scripts dir
+cd /app/scripts/bash
+# Start supervisor
+/usr/local/bin/supervisord -c /supervisord.conf
+# Start cron
+cron
+# Start server that receives transactions
+./start_transactions_server.sh
+# Serve the existing models
+./serve_models.sh
+# Start mlflow server
+mlflow server --host=0.0.0.0 --port=10000 --backend-store-uri sqlite:///../../mlflow.db --default-artifact-root artifacts

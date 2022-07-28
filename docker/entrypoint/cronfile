@@ -1,0 +1,2 @@
+# “At 06:00 on Sunday.”, retrain the models
+0 6 * * 7 cd /app/scripts/bash/train_models.sh
