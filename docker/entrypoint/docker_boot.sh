@@ -5,9 +5,7 @@ cd /app/scripts/bash
 /usr/local/bin/supervisord -c /supervisord.conf
 # Start cron
 cron
-# Start server that receives transactions
-./start_transactions_server.sh
-# Serve the existing models
+# Start mlflow server, detached
+mlflow server --host=0.0.0.0 --port=10000 --backend-store-uri sqlite:///../../mlflow.db --default-artifact-root artifacts &>/logs/mlflow.log &
+# Serve the existing models. Runs forever
 ./serve_models.sh
-# Start mlflow server
-mlflow server --host=0.0.0.0 --port=10000 --backend-store-uri sqlite:///../../mlflow.db --default-artifact-root artifacts

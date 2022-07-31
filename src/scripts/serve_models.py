@@ -15,7 +15,8 @@ import random
 if __name__ == "__main__":
     sets = load_datasets()
     for set in sets:
-        port = random.randint(1024, 65535)
+        port = random.randint(20000, 30000)
         server = ModelServer(set)
         server.port = port
         Thread(target=server.serve).start()
+print('Done!')

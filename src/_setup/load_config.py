@@ -39,9 +39,9 @@ def _setup_config():
         "port": input(
             "On which port should the server listen? Note that this port should "
             "be forwarded in your private network. The port should be within range ["
-            "10001, 10006], or you should manually change your docker-compose [10001]: "
+            "10002, 10006], or you should manually change your docker-compose [10002]: "
         )
-        or 10001,
+        or 10002,
         "hostname": input(
             "On which url is the host found (bunq connects to this " "url)?: "
         ),

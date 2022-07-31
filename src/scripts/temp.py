@@ -1,13 +1,16 @@
-from payment_classification.experiments.classifier_selection_experiment import \
+from mlflow.tracking import MlflowClient
+
+from model_selection.experiments.classifier_selection_experiment import \
     ClassifierSelectionExperiment
-from payment_classification.model_selector import ModelSelector
+from model_selection.model_selector import ModelSelector
+from model_selection.model_server import ModelServer
 
 if __name__ == "__main__":
     import _fix_imports
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 
-from payment_classification.experiments.hyperparameter_tuning_experiment import (
+from model_selection.experiments.hyperparameter_tuning_experiment import (
     HyperparameterTuningExperiment,
 )
 from helpers.helpers import load_datasets
@@ -39,4 +42,20 @@ def test():
     ModelSelector(set).select()
 
 
-test()
+
+
+# test()
+
+#
+# name = "Classifier for Budget 7f04a6d1-40aa-4fce-a7c5-e213a8ea3c11"
+#
+# client = MlflowClient()
+# test = client.get_latest_versions(name, stages=['None'])[0].version
+# client.transition_model_version_stage(
+#     name="Classifier for Budget 7f04a6d1-40aa-4fce-a7c5-e213a8ea3c11",
+#     # version=3,
+#     stage="Production"
+# )
+# set
+# test = ''
+ModelServer()
