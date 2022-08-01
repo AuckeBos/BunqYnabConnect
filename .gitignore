@@ -8,3 +8,4 @@ src/helpers/artifact.pickle
 logs/supervisor/*.log
 logs/supervisor/*.pid
 logs/*.log
+Dockerfile

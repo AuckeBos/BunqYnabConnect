@@ -5,7 +5,7 @@ import pickle
 from functools import wraps
 from time import sleep
 from typing import List, Any, Optional
-
+from pathlib import Path
 from mlflow import log_artifact
 
 from _setup.load_config import CONFIG_DIR, CONFIG_FILE
@@ -14,11 +14,13 @@ from _setup.load_config import CONFIG_DIR, CONFIG_FILE
 LOGFILE = "../../logs/output.log"
 MODEL_PORT_FILE = f"{CONFIG_DIR}/model_ports.json"
 FLASK_LOG_FILE = "../../logs/flask.log"
+MLFLOW_INITIALIZATION_FILE = "/mlflow_initialized"
+RESTART_MODEL_SERVING_FILE = "/restart_serving"
 _bunq_connector = None
 _ynab_connector = None
 
 
-def log(msg, error=False, with_divider = False):
+def log(msg, error=False, with_divider=False):
     """
     Helper function to log any data to stdout
     Parameters
@@ -41,11 +43,13 @@ def log(msg, error=False, with_divider = False):
     with open(LOGFILE, "a") as f:
         f.write(txt)
 
+
 def setup_needed() -> bool:
     """
     Check whether the setup has been ran. If not, return True
     """
     return not os.path.exists(CONFIG_DIR)
+
 
 def get_model_port(dataset) -> Optional[int]:
     """
@@ -53,7 +57,7 @@ def get_model_port(dataset) -> Optional[int]:
     the ModelServer is served()'d
     """
     budget_id = dataset.budget.id
-    with open(MODEL_PORT_FILE, 'r+') as file:
+    with open(MODEL_PORT_FILE, "r+") as file:
         ports = json.load(file)
         if budget_id not in ports:
             return None
@@ -179,3 +183,26 @@ def get_mlflow_model_name(dataset) -> str:
     Get the name under which to deploy the model for this dataset
     """
     return f"Classifier for Budget {dataset.budget.id}"
+
+
+def mlflow_is_initialized():
+    """
+    Return true if mlflow has been initialized. Do so by checking whether the
+    initialization file exists. This file is touched after each train_models
+    """
+    return os.path.exists(MLFLOW_INITIALIZATION_FILE)
+
+
+def should_restart_model_serving():
+    """
+    Return true if the RESTART_MODEL_SERVING_FILE file exists. It is created whenever
+    new models are trained. Then we should restart model serving
+    """
+    return os.path.exists(RESTART_MODEL_SERVING_FILE)
+
+
+def trigger_model_serving_restart():
+    """
+    Touch the RESTART_MODEL_SERVING_FILE file, will trigger a re-serve
+    """
+    Path(RESTART_MODEL_SERVING_FILE).touch()

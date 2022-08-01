@@ -1,6 +1,13 @@
 FROM python:3.8
 LABEL Maintainer="Aucke Bos"
 
+# Expose port. Will be replaced during load_config.py. On this port, the server will be running
+EXPOSE <PORT>/tcp
+
+# Expose port for mlflow ui, and supervisord
+EXPOSE 10000/tcp
+EXPOSE 10001/tcp
+
 # Copy src
 COPY src /app
 WORKDIR /app
@@ -14,9 +21,9 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 RUN apt-get update -y
 RUN apt-get install -y cron
 COPY docker/entrypoint/cronfile /etc/cron.d/cronfile
+RUN chmod 0644 /etc/cron.d/cronfile
+RUN crontab /etc/cron.d/cronfile
 
-# Copy boot script
-COPY docker/entrypoint/docker_boot.sh /docker_boot.sh
 # Copy supervisor file
 COPY docker/entrypoint/supervisord.conf /supervisord.conf
 
@@ -26,13 +33,13 @@ COPY config /config
 # Create /cache folder
 RUN mkdir /cache
 
-# Prevent access issues on host
+# Create log dir
 RUN mkdir /logs
 RUN mkdir /logs/supervisor
 RUN mkdir /logs/supervisor/childlogs
-RUN chmod -R 777 /logs
 
-# TEMP
-COPY mlflow.db /mlflow.db
+# Copy boot script, and set entrypoint
+COPY docker/entrypoint/docker_boot.sh /docker_boot.sh
+RUN chmod -R 777 /app/scripts
 # Set entrypoint
 ENTRYPOINT "/docker_boot.sh"
