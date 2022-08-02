@@ -16,21 +16,30 @@ Perform the following steps to get up and running:
    account. Bunq will respond with a configuration file, which is then used for login
    purposes. This token is needed in the setup script. Take a look at the 
    [Documentation](https://doc.bunq.com/#/authentication).
-3. The other steps include providing login credentials for Bunq and Ynab.
+3. Expose a port on your local network to the outside internet. We refer to this port 
+   as `<PORT>` in the rest of this file. 
+4. The other steps include providing login credentials for Bunq and Ynab.
    (setup.py)[setup.py] guides you through this process. Run `python setup.py` in the 
    scripts folder. This will run the one-time configuration steps, it asks for user input during the
-   process.
-4. To connect your Bunq ibans with your Ynab accounts, make sure that for each Ynab
+   process. Make sure to provide port `<PORT>`, when asked for the server port.
+5. To connect your Bunq ibans with your Ynab accounts, make sure that for each Ynab
    account that belongs to one of your Bunq accounts, set the description of the Ynab
    account equal to the Iban of the Bunq account. The script will now book each payment
    on the Bunq account to the corresponding Ynab account.
-5. Now build the docker image, and start it, using `docker-compose up --build`.
-6. The container starts, and restarts on boot. It automatically starts the following 
-   processes:
+6. Build the docker image, using `docker build .` in the root folder
+7. Build and run the container detached. Make sure to expose the right ports. Replace 
+   `<PORT>` with your exposed port, and run the following command:
+
+    ```docker run --restart=always -dit -p 10000:10000 -p 10001:10001 -p 9888:<PORT> --name bunqynab bunqynab```
+    
+    This builds a container, and starts it detached. Upon first start, it trains the 
+   models for the first time. The following processes are started whenever the 
+   container boots:
    - The `mlflow` client on port 10000. The port is forwarded to your host, hence 
      you can reach it at `http://127.0.0.1:10000`.
    - The server that receives Bunq transactions, and forwards them to Ynab. It is ran 
-     on the port which is defined during setup.
+     on port 9888, but available on your host on port <PORT>. Again, make sure your 
+     host is publicly reachable on this port.
    - Supervisor, which makes sure that above server is always running. It can be 
      accessed at `http://127.0.0.1:10001`, to check its status.
    - Every sunday morning, at `06:00`, the container will re-select, -configure, -train, 

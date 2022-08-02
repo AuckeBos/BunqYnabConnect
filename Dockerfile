@@ -1,8 +1,8 @@
 FROM python:3.8
 LABEL Maintainer="Aucke Bos"
 
-# Expose port. Will be replaced during load_config.py. On this port, the server will be running
-EXPOSE <PORT>/tcp
+# Expose port. For transactions server
+EXPOSE 9888/tcp
 
 # Expose port for mlflow ui, and supervisord
 EXPOSE 10000/tcp
@@ -20,9 +20,9 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 # Install crontab, create cronfile
 RUN apt-get update -y
 RUN apt-get install -y cron
-COPY docker/entrypoint/cronfile /etc/cron.d/cronfile
-RUN chmod 0644 /etc/cron.d/cronfile
-RUN crontab /etc/cron.d/cronfile
+
+# “At 06:00 on Sunday.”, retrain the models
+RUN (echo "0 6 * * * cd /app/scripts/bash && ./train_models.sh" | crontab -u root -)
 
 # Copy supervisor file
 COPY docker/entrypoint/supervisord.conf /supervisord.conf

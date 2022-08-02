@@ -23,7 +23,6 @@ def setup():
     )
     input("Press enter to key to continue...")
     _setup_config()
-    _setup_dockerfile()
     print(
         "Config dir created. Please copy your private key and chainfile to the "
         "config dir, named privkey.pem and fullchain.pem respectively"
@@ -41,8 +40,10 @@ def _setup_config():
         "host": input("On which host should the server listen? [0.0.0.0]: ")
         or "0.0.0.0",
         "port": input(
-            "On which port should the server listen? Note that this port should "
-            "be forwarded in your private network. [9888]: "
+            """On which port should the server be reachable? Note that this port should
+            be forwarded in your private network. When you start the docker container,
+            make sure you map this port to port 9888 on the container. [9888]: "
+            """
         )
         or 9888,
         "hostname": input(
@@ -60,23 +61,6 @@ def _setup_config():
         json.dump({}, file)
     with open(CONFIG_FILE, "x") as file:
         json.dump(cfg, file)
-
-
-def _setup_dockerfile():
-    """
-    Create the Dockerfile, based on the Dockerfile template
-    The actual file has the <PORT> variable replace by the user input, such that the
-    dockerfile will expose the port
-    """
-    from helpers.helpers import get_config
-    port = get_config("port")
-    with open(DOCKERFILE_TEMPLATE, "r") as f:
-        template = f.read()
-    updated_content = template.replace("<PORT>", str(port))
-    with open(DOCKERFILE, 'w+') as f:
-        f.write(updated_content)
-    print("Dockerfile created")
-
 
 def _setup_bunq() -> None:
     """

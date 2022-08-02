@@ -16,6 +16,7 @@ MODEL_PORT_FILE = f"{CONFIG_DIR}/model_ports.json"
 FLASK_LOG_FILE = "../../logs/flask.log"
 MLFLOW_INITIALIZATION_FILE = "/mlflow_initialized"
 RESTART_MODEL_SERVING_FILE = "/restart_serving"
+TRANSACTIONS_SERVER_PORT = 9888
 _bunq_connector = None
 _ynab_connector = None
 

@@ -6,7 +6,7 @@ import threading
 
 from flask import Flask, request
 
-from helpers.helpers import get_bunq_connector, get_config
+from helpers.helpers import get_bunq_connector, get_config, TRANSACTIONS_SERVER_PORT
 
 app = Flask(__name__)
 
@@ -47,6 +47,6 @@ def run():
     )
     app.run(
         host=cfg["host"],
-        port=cfg["port"],
+        port=TRANSACTIONS_SERVER_PORT,
         ssl_context=ssl_context,
     )
