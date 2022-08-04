@@ -1,0 +1,9 @@
+version: '3'
+services:
+  bunq_ynab_server:
+    build: ../
+    volumes:
+      - config:/config
+    ports:
+      - "10000-10001:10000-10001"
+      - "9888:<PORT>"
