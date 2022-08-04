@@ -6,7 +6,6 @@ from functools import wraps
 from time import sleep
 from typing import List, Any, Optional
 from pathlib import Path
-from mlflow import log_artifact
 
 from _setup.load_config import CONFIG_DIR, CONFIG_FILE
 
@@ -177,6 +176,7 @@ def retry(max_attempts: int, message: str = None):
 
 
 def object_to_mlflow(obj: Any, name: str) -> None:
+    from mlflow import log_artifact
     """
     Save an object to an artifact by:
     - Saving the object to a temp pickle file
