@@ -51,7 +51,7 @@ def _setup_config():
         ),
         "ynab_token": input("What is your YNAB api token?: "),
         "ssl_context": ("/config/fullchain.pem", "/config/privkey.pem"),
-        "currency": input("What is your default currency code?: "),
+        "currency": input("What is your default currency code? [EUR]: ") or "EUR",
     }
     os.mkdir(CONFIG_DIR)
     # Create empty model port file
@@ -70,6 +70,7 @@ def _setup_bunq() -> None:
     key = input("What is your bunq api key?: ")
     description = "BunqYnabConnect"
     ips = [get_public_ip()]
+
     try:
         context = ApiContext.create(env, key, description, ips)
         context.save(BUNQ_CONFIG_FILE)

@@ -18,16 +18,23 @@ Perform the following steps to get up and running:
    [Documentation](https://doc.bunq.com/#/authentication).
 3. Expose a port on your local network to the outside internet. We refer to this port 
    as `<PORT>` in the rest of this file. 
-4. The other steps include providing login credentials for Bunq and Ynab.
+4. In principle, all code is run inside a docker image. Therefore, you do not have to 
+   install anything on your host, with the following exceptions:
+   - You should have docker installed, to build the image and run the container
+   - You should have python version >=3.8 installed
+   - As described below, a one-time setup needs to be ran on the host. One library is 
+     needed for this: the bunq-sdk. It is used to generate a configuration file, used 
+     to connect to your bunq account. You can install this library using `pip`.
+5. The other steps include providing login credentials for Bunq and Ynab.
    (setup.py)[setup.py] guides you through this process. Run `python setup.py` in the 
    scripts folder. This will run the one-time configuration steps, it asks for user input during the
    process. Make sure to provide port `<PORT>`, when asked for the server port.
-5. To connect your Bunq ibans with your Ynab accounts, make sure that for each Ynab
+6. To connect your Bunq ibans with your Ynab accounts, make sure that for each Ynab
    account that belongs to one of your Bunq accounts, set the description of the Ynab
    account equal to the Iban of the Bunq account. The script will now book each payment
    on the Bunq account to the corresponding Ynab account.
-6. Build the docker image, using `docker build .` in the root folder
-7. Build and run the container detached. Make sure to expose the right ports. Replace 
+7. Build the docker image, using `docker build .` in the root folder
+8. Build and run the container detached. Make sure to expose the right ports. Replace 
    `<PORT>` with your exposed port, and run the following command:
 
     ```docker run --restart=always -dit -p 10000:10000 -p 10001:10001 -p 9888:<PORT> --name bunqynab bunqynab```
