@@ -1,4 +1,7 @@
 from datetime import datetime
+from typing import Dict
+
+import requests
 
 import ynab
 from ynab import Account, Category, TransactionDetail, SubTransaction
@@ -28,7 +31,8 @@ class Ynab:
         self._monkey_patch_ynab()
         self.client = self._get_client()
 
-    def add_transaction(self, iban: str, payee: str, value: float, memo: str) -> bool:
+    def add_transaction(self, iban: str, payee: str, value: float, memo: str,
+                        raw_data: Dict) -> bool:
         """
         Add a transaction. Called by the _bunq connector.
         :param iban: The iban on which the transaction was made. Will be translated to
@@ -37,11 +41,12 @@ class Ynab:
         :param payee: Name of the counterparty
         :param value: The value of the transaction, in EUR
         :param memo: Memo of the transaction
+        :param raw_data: The raw transaction data, used for category prediction
         :return: success
         """
         account = self.iban_to_account(iban)
         budget_id = account.budget_id
-        category = self._decide_category(budget_id, payee)
+        category = self._decide_category(budget_id, raw_data)
         date = datetime.datetime.now()
         value = int(value * 1000)  # Convert to the right units
         flag_color = 'blue'
@@ -129,20 +134,30 @@ class Ynab:
         return api.get_transactions_by_account(account.budget_id,
                                                account.id).data.transactions
 
-    def _decide_category(self, budget_id, payee: str) -> Category:
+    def _decide_category(self, budget_id, raw_data: Dict) -> Category:
         """
-        Decide the category of a payment to a certain payee.
-        For now: Always select the 'Inflow' category.
-        Todo: decide based on payee name
+        Decide the category of a payment:
+        - Load the url of the server that should host a model that can predict
+        transactions for this budget
+        - Post to the server
+        - If fail, use backup, else prediction
+        - Convert category string to category
         :param budget_id: The id of the budget we are creating a transcation for
-        :param payee: The payee name
-        :return: the category id
+        :param raw_data: The raw transaction data
+        :return: the category
         """
-        name = 'Inflow: Ready to Assign'
+        try:
+            url = get_prediction_url(budget_id)
+            data = raw_data
+            category_name = requests.post(url, json = raw_data)
+            log(f"Category {category_name} was predicted")
+        except Exception as e:
+            log(f"Category could not be predicted: {e}")
+            category_name = 'Inflow: Ready to Assign'
         for category in self.get_categories(budget_id):
-            if category.name == name:
+            if category.name == category_name:
                 return category
-        raise Exception(f'No category found for budget {budget_id} and payee {payee}')
+        raise Exception(f'No category found for budget {budget_id} and category {category_name}')
 
     def _get_client(self):
         """

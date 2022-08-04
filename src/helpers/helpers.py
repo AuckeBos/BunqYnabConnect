@@ -51,13 +51,27 @@ def setup_needed() -> bool:
     """
     return not os.path.exists(CONFIG_DIR)
 
+def get_prediction_url(budget_id: str):
+    """
+    Get the url to POST to, to get the category prediction of a transaction for a
+    budget:
+    - Load the port on which the server that servers the model for this budget resides
+    - Load the url
+    - return it
+    """
+    port = get_model_port(budget_id)
+    url = f"http://localhost:{port}/predict"
+    return url
 
-def get_model_port(dataset) -> Optional[int]:
+
+
+
+
+def get_model_port(budget_id: str) -> Optional[int]:
     """
     Get the port on which a model is currently being served. The port is set whenever
     the ModelServer is served()'d
     """
-    budget_id = dataset.budget.id
     with open(MODEL_PORT_FILE, "r+") as file:
         ports = json.load(file)
         if budget_id not in ports:

@@ -14,7 +14,7 @@ from helpers.cache import cache
 from helpers.helpers import log, get_config, get_ynab_connector, retry
 from _setup.load_config import BUNQ_CONFIG_FILE
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 
 class Bunq:
@@ -33,15 +33,15 @@ class Bunq:
         webhook.
         """
         log(f"Adding transaction {transaction}")
-        data = transaction['NotificationUrl']['object']['Payment']
-        amount = float(data['amount']['value'])
-        currency = data['amount']['currency']
-        memo = data['description']
+        data = transaction["NotificationUrl"]["object"]["Payment"]
+        amount = float(data["amount"]["value"])
+        currency = data["amount"]["currency"]
+        memo = data["description"]
         if currency != get_config("currency"):
-            memo += f' - Note: currency is {currency}'
-        iban = data['alias']['iban']
-        payee = data['counterparty_alias']['display_name']
-        get_ynab_connector().add_transaction(iban, payee, amount, memo)
+            memo += f" - Note: currency is {currency}"
+        iban = data["alias"]["iban"]
+        payee = data["counterparty_alias"]["display_name"]
+        get_ynab_connector().add_transaction(iban, payee, amount, memo, data)
         log("Transaction added!")
 
     @cache(ttl=60 * 60 * 24)
@@ -65,14 +65,22 @@ class Bunq:
         should_continue = True
 
         while should_continue:
-            query_result = endpoint.Payment.list(monetary_account_id=account_id,
-                                                 params=params)
+            query_result = endpoint.Payment.list(
+                monetary_account_id=account_id, params=params
+            )
             payments.extend(query_result.value)
             should_continue = query_result.pagination.has_previous_page()
             if should_continue:
                 # Use previous_page since ordering is new to old
                 params = query_result.pagination.url_params_previous_page
         return payments
+
+    def get_payment(self, payment_id: int, monetary_account_id: int) -> Payment:
+        """
+        Get a single payment, by the payment id
+        """
+        # Max allowed count is 200
+        return endpoint.Payment.get(payment_id, monetary_account_id).value
 
     def _load(self):
         """
@@ -97,8 +105,11 @@ class Bunq:
         return [
             {
                 "category": f["NotificationFilterUrl"]["category"],
-                "notification_target": f["NotificationFilterUrl"]["notification_target"],
-            } for f in filters
+                "notification_target": f["NotificationFilterUrl"][
+                    "notification_target"
+                ],
+            }
+            for f in filters
         ]
 
     def _put_callbacks(self, callbacks) -> bool:
@@ -113,9 +124,9 @@ class Bunq:
 
         data = {"notification_filters": callbacks}
 
-        response = ApiClient(BunqContext.api_context()).post(url,
-                                                             json.dumps(data).encode(),
-                                                             {})
+        response = ApiClient(BunqContext.api_context()).post(
+            url, json.dumps(data).encode(), {}
+        )
         log("Callback added successfully!")
         return True
 
@@ -126,8 +137,10 @@ class Bunq:
         """
         callbacks = self._get_callbacks()
         for callback in callbacks:
-            if callback["notification_target"].endswith(url) and \
-                    callback["category"] == category:
+            if (
+                callback["notification_target"].endswith(url)
+                and callback["category"] == category
+            ):
                 return True
         return False
 
@@ -137,13 +150,10 @@ class Bunq:
         """
         cfg = get_config()
         url = f'https://{cfg["hostname"]}:{cfg["port"]}/receive-transaction'
-        category = 'MUTATION'
+        category = "MUTATION"
         if self._callback_exists(url, category):
             return
         log("Adding callback once...")
         callbacks = self._get_callbacks()
-        callbacks.append({
-            "category": category,
-            "notification_target": url
-        })
+        callbacks.append({"category": category, "notification_target": url})
         self._put_callbacks(callbacks)
