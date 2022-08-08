@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-cd .. && python serve_models.py
+cd .. && /usr/local/bin/python serve_models.py

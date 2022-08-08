@@ -9,11 +9,17 @@ CURRENT_DIR = os.path.dirname(__file__)
 CONFIG_DIR = f"{CURRENT_DIR}/../../config"
 CONFIG_FILE = f"{CONFIG_DIR}/cfg.json"
 BUNQ_CONFIG_FILE = f"{CONFIG_DIR}/bunq.cfg"
-DOCKERFILE_TEMPLATE = f"{CURRENT_DIR}/../../docker/Dockerfile.template"
-DOCKERFILE = f"{CURRENT_DIR}/../../Dockerfile"
+DOCKERFILE_TEMPLATE = f"{CURRENT_DIR}/../../docker/docker-compose.template"
+DOCKERFILE = f"{CURRENT_DIR}/../../docker-compose.yml"
 
 
 def setup():
+    """
+    Run the one-time setup. Must be run on the host, and it:
+    - Asks for user input, is saved in cfg.json. Contains data like host and port
+    - Creates the docker-compose.yml, based on the port
+    - Creates a bunq cfg file
+    """
     if os.path.exists(CONFIG_DIR):
         print("Config folder yet exists. To re-run the setup, delete your config dir")
         exit()
@@ -27,6 +33,7 @@ def setup():
         "Config dir created. Please copy your private key and chainfile to the "
         "config dir, named privkey.pem and fullchain.pem respectively"
     )
+    _setup_docker()
     input("Press enter to key to continue...")
     _setup_bunq()
 
@@ -41,13 +48,14 @@ def _setup_config():
         or "0.0.0.0",
         "port": input(
             """On which port should the server be reachable? Note that this port should
-            be forwarded in your private network. When you start the docker container,
-            make sure you map this port to port 9888 on the container. [9888]: "
+            be forwarded in your private network. The docker image will expose port 
+            9888, docker-compose maps it to the port you define here. [9888]: "
             """
         )
         or 9888,
         "hostname": input(
-            "On which url is the host found (bunq connects to this " "url)?: "
+            "On which url (without port) is the host found (bunq connects to this " 
+            "url)?: "
         ),
         "ynab_token": input("What is your YNAB api token?: "),
         "ssl_context": ("/config/fullchain.pem", "/config/privkey.pem"),
@@ -77,6 +85,22 @@ def _setup_bunq() -> None:
     except Exception as e:
         print(f"Could not create _bunq config: {e}", True)
         exit()
+
+
+def _setup_docker():
+    """
+    Create the docker-compose file, based on the docker-compose template
+    The actual file has the <PORT> variable replace by the user input, such that the
+    dockerfile will expose the port
+    """
+    from helpers.helpers import get_config
+    port = get_config("port")
+    with open(DOCKERFILE_TEMPLATE, "r") as f:
+        template = f.read()
+    updated_content = template.replace("<PORT>", str(port))
+    with open(DOCKERFILE, 'w+') as f:
+        f.write(updated_content)
+    print("Dockerfile created")
 
 
 def get_public_ip():

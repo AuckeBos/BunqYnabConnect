@@ -22,7 +22,7 @@ RUN apt-get update -y
 RUN apt-get install -y cron
 
 # “At 06:00 on Sunday.”, retrain the models
-RUN (echo "0 6 * * * cd /app/scripts/bash && ./train_models.sh" | crontab -u root -)
+RUN (echo "0 6 * * 7 cd /app/scripts/bash && ./train_models.sh" | crontab -u root -)
 
 # Copy supervisor file
 COPY docker/entrypoint/supervisord.conf /supervisord.conf

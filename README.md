@@ -20,7 +20,8 @@ Perform the following steps to get up and running:
    as `<PORT>` in the rest of this file. 
 4. In principle, all code is run inside a docker image. Therefore, you do not have to 
    install anything on your host, with the following exceptions:
-   - You should have docker installed, to build the image and run the container
+   - You should have docker and docker-compose installed, to build the image and run the 
+     container
    - You should have python version >=3.8 installed
    - As described below, a one-time setup needs to be ran on the host. One library is 
      needed for this: the bunq-sdk. It is used to generate a configuration file, used 
@@ -33,15 +34,14 @@ Perform the following steps to get up and running:
    account that belongs to one of your Bunq accounts, set the description of the Ynab
    account equal to the Iban of the Bunq account. The script will now book each payment
    on the Bunq account to the corresponding Ynab account.
-7. Build the docker image, using `docker build .` in the root folder
-8. Build and run the container detached. Make sure to expose the right ports. Replace 
-   `<PORT>` with your exposed port, and run the following command:
+7. Build the docker image, using `docker-compose build` in the root folder
+8. Build and run the container detached:
 
-    ```docker run --restart=always -dit -p 10000:10000 -p 10001:10001 -p 9888:<PORT> --name bunqynab bunqynab```
+    ```docker-compose up --detach```
     
-    This builds a container, and starts it detached. Upon first start, it trains the 
-   models for the first time. The following processes are started whenever the 
-   container boots:
+    This builds a container, and starts it detached. The container always restarts 
+   when it is shut down.  Upon first start, it trains the models for the first time. 
+   The following processes are started whenever the container boots:
    - The `mlflow` client on port 10000. The port is forwarded to your host, hence 
      you can reach it at `http://127.0.0.1:10000`.
    - The server that receives Bunq transactions, and forwards them to Ynab. It is ran 
@@ -52,3 +52,5 @@ Perform the following steps to get up and running:
    - Every sunday morning, at `06:00`, the container will re-select, -configure, -train, 
      -deploy, and -serve the best model on the newest data. The server is restarted, 
      such that it uses the new model. 
+9. You can bash into the container using `docker exec -it bunqynab /bin/bash`. The 
+   logs are found in the `/logs` directory.

@@ -1,2 +1,2 @@
 #!/usr/bin/env sh
-cd .. && python train_models.py
+cd .. && /usr/local/bin/python train_models.py

@@ -129,8 +129,6 @@ def load_datasets() -> List:
     budgets = get_ynab_connector().get_budgets()
     for budget in budgets:
         # Remove below on production
-        # if budget.budget_info.name != "Maaike":
-        #     continue
         dataset = Dataset(budget.load_info())
         if not dataset.is_valid:
             log(f"Skipping invalid dataset {dataset.budget.id}")
