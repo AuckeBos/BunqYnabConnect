@@ -149,7 +149,7 @@ class Ynab:
         try:
             url = get_prediction_url(budget_id)
             data = raw_data
-            category_name = requests.post(url, json = raw_data)
+            category_name = requests.post(url, json = raw_data).text
             log(f"Category {category_name} was predicted")
         except Exception as e:
             log(f"Category could not be predicted: {e}")

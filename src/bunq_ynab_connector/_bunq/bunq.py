@@ -127,7 +127,7 @@ class Bunq:
         response = ApiClient(BunqContext.api_context()).post(
             url, json.dumps(data).encode(), {}
         )
-        log("Callback added successfully!")
+        log(f"Callback {callbacks} added successfully!")
         return True
 
     def _callback_exists(self, url, category) -> bool:
