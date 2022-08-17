@@ -38,6 +38,8 @@ def run():
     """
     Run the flask app indefinitely
     """
+    # Create it once. Hereby we make sure we have _check_callbacks()'d once
+    tmp = get_bunq_connector()
     cfg = get_config()
     ssl_context = tuple(
         [
