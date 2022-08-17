@@ -1,0 +1,13 @@
+version: '3'
+services:
+  bunq_ynab_server:
+    container_name: bunqynab
+    build: .
+    volumes:
+      - ./config:/config
+      - ./config/fullchain.pem:/config/fullchain.pem # Hardcode path, to follow symlink
+      - ./config/privkey.pem:/config/privkey.pem # Hardcode path, to follow symlink
+    ports:
+      - "10000-10001:10000-10001"
+      - "9888:<PORT>"
+    restart: always
