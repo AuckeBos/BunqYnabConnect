@@ -56,7 +56,7 @@ def _setup_config():
         or 9888,
         "hostname": input(
             "On which url (without port, without https://) is the host found (bunq "
-            "connects to this url)"
+            "connects to this url)?: "
         ),
         "ynab_token": input("What is your YNAB api token?: "),
         "ssl_context": ("/config/fullchain.pem", "/config/privkey.pem"),

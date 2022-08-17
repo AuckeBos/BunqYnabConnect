@@ -23,13 +23,13 @@ class ClassifierSelectionExperiment(BaseExperiment):
 
     # https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html
     CLASSIFIERS = [
-        # KNeighborsClassifier(),
-        # SVC(),
+        KNeighborsClassifier(),
+        SVC(),
         DecisionTreeClassifier(),
-        # RandomForestClassifier(n_estimators=200),
-        # MLPClassifier(max_iter=1000, solver='lbfgs'),
-        # AdaBoostClassifier(),
-        # GaussianNB(),
+        RandomForestClassifier(n_estimators=200),
+        MLPClassifier(max_iter=1000, solver='lbfgs'),
+        AdaBoostClassifier(),
+        GaussianNB(),
     ]
 
     @BaseExperiment.register_mlflow

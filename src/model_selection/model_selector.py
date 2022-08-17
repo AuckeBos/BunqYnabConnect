@@ -43,16 +43,10 @@ class ModelSelector:
             "gamma": ["scale", "auto", 3],
             "shrinking": [True, False],
         },
-        # DecisionTreeClassifier().__class__.__name__: {
-        #     "criterion": ["gini", "entropy", "log_loss"],
-        #     "splitter": ["best", "random"],
-        #     "max_depth": [3, 5, 10, 20, 50, None],
-        # },
         DecisionTreeClassifier().__class__.__name__: {
-            "max_depth": [
-                3,
-                5,
-            ],
+            "criterion": ["gini", "entropy", "log_loss"],
+            "splitter": ["best", "random"],
+            "max_depth": [3, 5, 10, 20, 50, None],
         },
         RandomForestClassifier().__class__.__name__: {
             "n_estimators": [100, 1000, 2500],
