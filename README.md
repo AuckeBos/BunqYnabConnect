@@ -18,7 +18,9 @@ Perform the following steps to get up and running:
    [Documentation](https://doc.bunq.com/#/authentication).
 3. Expose a port on your local network to the outside internet. We refer to this port 
    as `<PORT>` in the rest of this file. 
-4. In principle, all code is run inside a docker image. Therefore, you do not have to 
+4. Make sure you have valid SSL certificates. Bunq will only callback to a valid 
+   HTTPS encrypted url. Make note of the locations of your fullchain and key files.
+5. In principle, all code is run inside a docker image. Therefore, you do not have to 
    install anything on your host, with the following exceptions:
    - You should have docker and docker-compose installed, to build the image and run the 
      container
@@ -26,16 +28,16 @@ Perform the following steps to get up and running:
    - As described below, a one-time setup needs to be ran on the host. One library is 
      needed for this: the bunq-sdk. It is used to generate a configuration file, used 
      to connect to your bunq account. You can install this library using `pip`.
-5. The other steps include providing login credentials for Bunq and Ynab.
+6. The other steps include providing login credentials for Bunq and Ynab.
    (setup.py)[setup.py] guides you through this process. Run `python setup.py` in the 
    scripts folder. This will run the one-time configuration steps, it asks for user input during the
    process. Make sure to provide port `<PORT>`, when asked for the server port.
-6. To connect your Bunq ibans with your Ynab accounts, make sure that for each Ynab
+7. To connect your Bunq ibans with your Ynab accounts, make sure that for each Ynab
    account that belongs to one of your Bunq accounts, set the description of the Ynab
    account equal to the Iban of the Bunq account. The script will now book each payment
    on the Bunq account to the corresponding Ynab account.
-7. Build the docker image, using `docker-compose build` in the root folder
-8. Build and run the container detached:
+8. Build the docker image, using `docker-compose build` in the root folder
+9. Build and run the container detached:
 
     ```docker-compose up --detach```
     
@@ -52,5 +54,5 @@ Perform the following steps to get up and running:
    - Every sunday morning, at `06:00`, the container will re-select, -configure, -train, 
      -deploy, and -serve the best model on the newest data. The server is restarted, 
      such that it uses the new model. 
-9. You can bash into the container using `docker exec -it bunqynab /bin/bash`. The 
+10. You can bash into the container using `docker exec -it bunqynab /bin/bash`. The 
    logs are found in the `/logs` directory.

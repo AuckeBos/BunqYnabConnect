@@ -29,9 +29,10 @@ def setup():
     )
     input("Press enter to key to continue...")
     _setup_config()
-    print(
-        "Config dir created. Please copy your private key and chainfile to the "
-        "config dir, named privkey.pem and fullchain.pem respectively"
+    print("""Config dir created. Please make sure to create symlinks 
+    config/privkey.pem  and config/fullchain.pem to the locations of those files. And 
+    make sure the certificates are updated automatically, for example using certbot.
+    """
     )
     _setup_docker()
     input("Press enter to key to continue...")
