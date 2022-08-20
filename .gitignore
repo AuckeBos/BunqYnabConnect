@@ -2,10 +2,11 @@ config
 cache
 .idea
 __pycache__
-src/artifacts
 mlflow.db
 src/helpers/artifact.pickle
 logs/supervisor/*.log
 logs/supervisor/*.pid
 logs/*.log
 docker-compose.yml
+src/scripts/artifacts
+src/artifacts

@@ -8,8 +8,7 @@ EXPOSE 9888/tcp
 EXPOSE 10000/tcp
 EXPOSE 10001/tcp
 
-# Copy src
-COPY src /app
+RUN mkdir /app
 WORKDIR /app
 
 # Install poetry, and install dependencies without creating a venv
@@ -40,6 +39,5 @@ RUN mkdir /logs/supervisor/childlogs
 
 # Copy boot script, and set entrypoint
 COPY docker/entrypoint/docker_boot.sh /docker_boot.sh
-RUN chmod -R 777 /app/scripts
 # Set entrypoint
 ENTRYPOINT "/docker_boot.sh"

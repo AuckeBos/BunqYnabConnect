@@ -4,6 +4,7 @@ services:
     container_name: bunqynab
     build: .
     volumes:
+      - ./src:/app
       - ./config:/config
       - ./config/fullchain.pem:/config/fullchain.pem # Hardcode path, to follow symlink
       - ./config/privkey.pem:/config/privkey.pem # Hardcode path, to follow symlink
