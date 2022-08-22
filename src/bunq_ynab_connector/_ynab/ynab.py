@@ -146,11 +146,14 @@ class Ynab:
         :param raw_data: The raw transaction data
         :return: the category
         """
+        # todo: Make sure the classifier can never predict invalid labels
+        invalid_categories = ['Split (Multiple Categories)...']
         try:
             url = get_prediction_url(budget_id)
-            data = raw_data
             category_name = requests.post(url, json = raw_data).text
             log(f"Category {category_name} was predicted")
+            if category_name in invalid_categories:
+                raise Exception(f"Category {category_name} is invalid, falling back to InFlow..")
         except Exception as e:
             log(f"Category could not be predicted: {e}")
             category_name = 'Inflow: Ready to Assign'
