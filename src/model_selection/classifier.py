@@ -22,7 +22,7 @@ class Classifier:
         Test size (percentage)
     """
 
-    RANDOM_STATE = 1337
+    RANDOM_STATE = None
     TEST_SIZE = 0.1
 
     def train_evaluate(
